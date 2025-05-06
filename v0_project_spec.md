@@ -2,6 +2,32 @@
 
 This document outlines the key methods of the Maut Wallet SDK and the corresponding Maut Platform Backend APIs required to implement the detailed 2-of-2 MPC signing flow using a user's Passkey and a Maut backend key with Turnkey.
 
+## Table of Contents
+
+1. [Maut Wallet SDK Method Definitions](#section-1-maut-wallet-sdk-method-definitions)
+   - [1. Initialize](#1-initialize)
+   - [2. Register Session With Token](#2-register-session-with-token)
+   - [3. Enroll Wallet](#3-enroll-wallet)
+   - [4. Get Wallet Details](#4-get-wallet-details)
+   - [5. Sign Transaction](#5-sign-transaction)
+   - [Event Emitters/Listeners](#event-emitterslisteners-as-per-specsmd)
+2. [Maut Platform Backend API Definitions](#section-2-maut-platform-backend-api-definitions)
+   - [1. POST /v1/session](#1-post-v1session)
+   - [2. POST /v1/wallet/enroll](#2-post-v1walletenroll)
+   - [3. POST /v1/authenticators/initiate-passkey-registration](#3-post-v1authenticatorsinitiate-passkey-registration)
+   - [4. POST /v1/authenticators/complete-passkey-registration](#4-post-v1authenticatorscomplete-passkey-registration)
+   - [5. POST /v1/policies/apply-signing-policy](#5-post-v1policiesapply-signing-policy)
+   - [6. GET /v1/wallet/details](#6-get-v1walletdetails)
+   - [7. POST /v1/transactions/initiate-signing](#7-post-v1transactionsinitiate-signing)
+   - [8. POST /v1/activities/:activityId/submit-user-approval](#8-post-v1activitiesactivityidsubmit-user-approval)
+   - [9. GET /v1/activities/:activityId/status](#9-get-v1activitiesactivityidstatus)
+3. [Maut Platform Backend Data Models](#section-3-maut-platform-backend-data-models)
+   - [1. ClientApplication Model](#1-clientapplication-model)
+   - [2. MautUser Model](#2-mautuser-model)
+   - [3. UserWallet Model](#3-userwallet-model)
+   - [4. UserAuthenticator Model](#4-userauthenticator-model)
+   - [Relationships](#relationships)
+
 ### **Section 1: Maut Wallet SDK Method Definitions**
 
 These are the public methods exposed by the Maut Wallet SDK to the Client Application.
