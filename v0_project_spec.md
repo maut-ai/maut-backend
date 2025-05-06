@@ -1,4 +1,4 @@
-## **Maut SDK & Backend API Definitions for 2-of-2 MPC Flow**
+# **Maut SDK & Backend API Definitions for 2-of-2 MPC Flow**
 
 This document outlines the key methods of the Maut Wallet SDK and the corresponding Maut Platform Backend APIs required to implement the detailed 2-of-2 MPC signing flow using a user's Passkey and a Maut backend key with Turnkey.
 
@@ -6,7 +6,14 @@ This document outlines the key methods of the Maut Wallet SDK and the correspond
 
 These are the public methods exposed by the Maut Wallet SDK to the Client Application.
 
-**1\. initialize(config: { mautApiClientId: string, mautBackendUrl: string }): Promise\<void\>**
+**1. Initialize**
+
+```typescript
+initialize(config: { 
+  mautApiClientId: string, 
+  mautBackendUrl: string 
+}): Promise<void>
+```
 
 * **Purpose:** Initializes the SDK with necessary configuration. Sets up communication with the Maut Backend.  
 * **Parameters:**  
@@ -20,7 +27,14 @@ These are the public methods exposed by the Maut Wallet SDK to the Client Applic
   * None directly during initialization typically, but could fetch remote SDK config if designed that way.  
 * **Returns:** A Promise that resolves when initialization is complete, or rejects on failure.
 
-**2\. registerSessionWithToken(clientAuthToken: string): Promise\<{ mautUserId: string, isNewMautUser: boolean }\>**
+**2. Register Session With Token**
+
+```typescript
+registerSessionWithToken(clientAuthToken: string): Promise<{ 
+  mautUserId: string, 
+  isNewMautUser: boolean 
+}>
+```
 
 * **Purpose:** Establishes an authenticated session with the Maut Platform Backend using a token provided by the Client Application's backend. This token proves the user has been authenticated by the Client Application.  
 * **Parameters:**  
@@ -31,7 +45,15 @@ These are the public methods exposed by the Maut Wallet SDK to the Client Applic
   * POST /v1/session (with clientAuthToken).  
 * **Returns:** A Promise that resolves with an object containing the mautUserId and a boolean isNewMautUser indicating if this user is new to Maut, or rejects on failure.
 
-**3\. enrollWallet(params?: { walletDisplayName?: string }): Promise\<{ walletAddress: string }\>**
+**3. Enroll Wallet**
+
+```typescript
+enrollWallet(params?: { 
+  walletDisplayName?: string 
+}): Promise<{ 
+  walletAddress: string 
+}>
+```
 
 * **Purpose:** Orchestrates the entire onboarding flow for a new user to create their Turnkey sub-organization, private key, register their Passkey, and apply the 2-of-2 signing policy. This method should only be called for users identified as isNewMautUser: true from registerSessionWithToken.  
 * **Parameters:**  
@@ -53,7 +75,14 @@ These are the public methods exposed by the Maut Wallet SDK to the Client Applic
   * navigator.credentials.create()  
 * **Returns:** A Promise that resolves with an object containing the walletAddress, or rejects if any step fails.
 
-**4\. getWalletDetails(): Promise\<{ address: string, walletDisplayName?: string }\>**
+**4. Get Wallet Details**
+
+```typescript
+getWalletDetails(): Promise<{ 
+  address: string, 
+  walletDisplayName?: string 
+}>
+```
 
 * **Purpose:** Retrieves the user's wallet address and display name.  
 * **Parameters:** None.  
@@ -63,7 +92,18 @@ These are the public methods exposed by the Maut Wallet SDK to the Client Applic
   * GET /v1/wallet/details  
 * **Returns:** A Promise that resolves with wallet details, or rejects on failure.
 
-**5\. signTransaction(params: { type: 'RAW' | 'TEMPLATED', payload: object, privateKeyId?: string }): Promise\<{ signedTx: string, txHash?: string }\>**
+**5. Sign Transaction**
+
+```typescript
+signTransaction(params: { 
+  type: 'RAW' | 'TEMPLATED', 
+  payload: object, 
+  privateKeyId?: string 
+}): Promise<{ 
+  signedTx: string, 
+  txHash?: string 
+}>
+```
 
 * **Purpose:** Orchestrates the 2-of-2 signing process for a raw or templated transaction.  
 * **Parameters:**  
@@ -89,21 +129,43 @@ These are the public methods exposed by the Maut Wallet SDK to the Client Applic
 
 **Event Emitters/Listeners (as per specs.md):**
 
-* on(eventName: string, callback: Function): void  
-* off(eventName: string, callback: Function): void  
-* The SDK will use an internal emit function to trigger events like 'initializeSuccess', 'loginStateChange', 'walletConnected', 'walletEnrollmentStarted', 'passkeyCreationRequired', 'walletEnrollmentComplete', 'walletEnrollmentFailed', 'signingStarted', 'signingRequiresUserAction', 'signingComplete', 'signingFailed', 'error'.
+```typescript
+on(eventName: string, callback: Function): void
+off(eventName: string, callback: Function): void
+```
+
+The SDK will use an internal emit function to trigger events like:
+- `'initializeSuccess'` 
+- `'loginStateChange'`
+- `'walletConnected'`
+- `'walletEnrollmentStarted'`
+- `'passkeyCreationRequired'`
+- `'walletEnrollmentComplete'`
+- `'walletEnrollmentFailed'`
+- `'signingStarted'`
+- `'signingRequiresUserAction'`
+- `'signingComplete'`
+- `'signingFailed'`
+- `'error'`
 
 ### **Section 2: Maut Platform Backend API Definitions**
 
 These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) that the Maut Wallet SDK interacts with.
 
-**1\. POST /v1/session**
+**1. POST /v1/session**
+
+```http
+POST /v1/session
+```
 
 * **Purpose:** Validates a clientAuthToken from a Client Application, establishes a Maut-specific user session, and identifies if the user is new or returning to Maut.  
 * **Request Body:**  
-  {  
-    "clientAuthToken": "string (JWT)"  
-  }
+
+```json
+{
+  "clientAuthToken": "string (JWT)"
+}
+```
 
 * **Actions:**  
   1. Validates clientAuthToken (signature, issuer, audience, expiry) against pre-configured Client Application details.  
@@ -113,34 +175,53 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
 * **Turnkey Calls:** None directly.  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "mautUserId": "string",  
-      "isNewMautUser": boolean,  
-      "mautSessionId": "string (optional, if not solely cookie-based)"  
-    }
+  
+```json
+{
+  "mautUserId": "string",
+  "isNewMautUser": boolean,
+  "mautSessionId": "string (optional, if not solely cookie-based)"
+}
+```
 
   * **400 Bad Request**: Invalid token format or missing fields.  
-    {  
-      "error": "string (description of the error)"  
-    }
+  
+```json
+{
+  "error": "string (description of the error)"
+}
+```
 
   * **401 Unauthorized**: Token validation failed (invalid signature, expired, etc.).  
-    {  
-      "error": "string (description of the error)"  
-    }
+  
+```json
+{
+  "error": "string (description of the error)"
+}
+```
 
   * **500 Internal Server Error**: Unexpected server error.  
-    {  
-      "error": "string (description of the error)"  
-    }
+  
+```json
+{
+  "error": "string (description of the error)"
+}
+```
 
-**2\. POST /v1/wallet/enroll**
+**2. POST /v1/wallet/enroll**
+
+```http
+POST /v1/wallet/enroll
+```
 
 * **Purpose:** For a new Maut user (authenticated via Maut session), creates their Turnkey sub-organization, a root user within it, and their primary private key. Stores Turnkey-specific identifiers internally.  
 * **Request Body:** (Session authenticated via secure cookie)  
-  {  
-    "walletDisplayName": "string (optional)"  
-  }
+
+```json
+{
+  "walletDisplayName": "string (optional)"
+}
+```
 
 * **Actions:**  
   1. Verifies active Maut session.  
@@ -152,16 +233,23 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/create\_private\_keys  
 * **Responses:**  
   * **201 Created**  
-    {  
-      "mautUserId": "string",  
-      "walletAddress": "string"  
-    }
+  
+```json
+{
+  "mautUserId": "string",
+  "walletAddress": "string"
+}
+```
 
   * **401 Unauthorized**: No active Maut session or invalid session.  
   * **409 Conflict**: Wallet/Turnkey resources already exist for this Maut user.  
   * **500 Internal Server Error**.
 
-**3\. POST /v1/authenticators/initiate-passkey-registration**
+**3. POST /v1/authenticators/initiate-passkey-registration**
+
+```http
+POST /v1/authenticators/initiate-passkey-registration
+```
 
 * **Purpose:** Initiates the Passkey registration process for an authenticated Maut user by fetching a registration challenge from Turnkey. Necessary Turnkey identifiers are looked up by the backend based on the Maut session.  
 * **Request Body:** (Session authenticated via secure cookie)  
@@ -175,32 +263,42 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/create\_authenticators (to request a challenge)  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "challenge": "base64\_encoded\_string",  
-      "authenticatorId": "string"  
-    }
+  
+```json
+{
+  "challenge": "base64_encoded_string",
+  "authenticatorId": "string"
+}
+```
 
   * **401 Unauthorized**.  
   * **404 Not Found**: Maut user or associated Turnkey user/sub-organization not found in Maut's DB.  
   * **500 Internal Server Error**.
 
-**4\. POST /v1/authenticators/complete-passkey-registration**
+**4. POST /v1/authenticators/complete-passkey-registration**
+
+```http
+POST /v1/authenticators/complete-passkey-registration
+```
 
 * **Purpose:** Completes the Passkey registration by sending the user's Passkey attestation data (obtained from the browser's WebAuthn API) to Turnkey.  
 * **Request Body:** (Session authenticated via secure cookie)  
-  {  
-    "authenticatorId": "string",  
-    // turnkeySubOrganizationId is looked up by the backend based on the Maut session  
-    "signedChallenge": {  
-      "rawId": "string (Base64URL encoded)",  
-      "response": {  
-        "clientDataJSON": "string (Base64URL encoded)",  
-        "attestationObject": "string (Base64URL encoded)"  
-      },  
-      "type": "public-key"  
-      // ... other fields from PublicKeyCredential  
-    }  
+
+```json
+{
+  "authenticatorId": "string",
+  // turnkeySubOrganizationId is looked up by the backend based on the Maut session
+  "signedChallenge": {
+    "rawId": "string (Base64URL encoded)",
+    "response": {
+      "clientDataJSON": "string (Base64URL encoded)",
+      "attestationObject": "string (Base64URL encoded)"
+    },
+    "type": "public-key"
+    // ... other fields from PublicKeyCredential
   }
+}
+```
 
 * **Actions:**  
   1. Verifies active Maut session.  
@@ -210,15 +308,22 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/register\_authenticator (or equivalent to submit attestation)  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "status": "Passkey registered successfully"  
-    }
+  
+```json
+{
+  "status": "Passkey registered successfully"
+}
+```
 
   * **400 Bad Request**: Invalid attestation data or malformed request.  
   * **401 Unauthorized**.  
   * **500 Internal Server Error**.
 
-**5\. POST /v1/policies/apply-signing-policy**
+**5. POST /v1/policies/apply-signing-policy**
+
+```http
+POST /v1/policies/apply-signing-policy
+```
 
 * **Purpose:** Applies the default 2-of-2 signing policy to the user's primary private key. Necessary Turnkey identifiers (privateKeyId, turnkeySubOrganizationId, turnkeyUserId) are looked up by the backend based on the Maut session.  
 * **Request Body:** (Session authenticated via secure cookie)  
@@ -233,15 +338,22 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/create\_policy  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "status": "Policy applied successfully"  
-    }
+  
+```json
+{
+  "status": "Policy applied successfully"
+}
+```
 
   * **401 Unauthorized**.  
   * **404 Not Found**: Relevant Maut or Turnkey resources (user, private key) not found based on session.  
   * **500 Internal Server Error**.
 
-**6\. GET /v1/wallet/details**
+**6. GET /v1/wallet/details**
+
+```http
+GET /v1/wallet/details
+```
 
 * **Purpose:** Retrieves wallet address and display name for the authenticated Maut user.  
 * **Request Parameters:** (Session authenticated via secure cookie)  
@@ -251,34 +363,44 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
 * **Turnkey Calls:** None directly for this.  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "address": "string (e.g., 0x...)",  
-      "walletDisplayName": "string (optional)"  
-    }
+  
+```json
+{
+  "address": "string (e.g., 0x...)",
+  "walletDisplayName": "string (optional)"
+}
+```
 
   * **401 Unauthorized**.  
   * **404 Not Found**: Wallet not found for the user.  
   * **500 Internal Server Error**.
 
-**7\. POST /v1/transactions/initiate-signing**
+**7. POST /v1/transactions/initiate-signing**
+
+```http
+POST /v1/transactions/initiate-signing
+```
 
 * **Purpose:** Receives transaction details from the SDK, performs Maut's internal policy checks, and if approved, initiates the signing activity with Turnkey (providing Maut's first approval).  
 * **Request Body:** (Session authenticated via secure cookie)  
-  {  
-    "privateKeyId": "string (optional, backend can use default looked up via session)",  
-    "type": "RAW" | "TEMPLATED",  
-    "payload": {  
-      // If type \== "RAW"  
-      // "to": "string (address)",  
-      // "value": "string (optional, hex wei)",  
-      // "data": "string (optional, hex)",  
-      // "unsignedTransaction": "string (hex-encoded unsigned transaction)"
 
-      // If type \== "TEMPLATED"  
-      // "templateId": "string",  
-      // "parameters": {}  
-    }  
+```json
+{
+  "privateKeyId": "string (optional, backend can use default looked up via session)",
+  "type": "RAW" | "TEMPLATED",
+  "payload": {
+    // If type == "RAW"
+    // "to": "string (address)",
+    // "value": "string (optional, hex wei)",
+    // "data": "string (optional, hex)",
+    // "unsignedTransaction": "string (hex-encoded unsigned transaction)"
+
+    // If type == "TEMPLATED"
+    // "templateId": "string",
+    // "parameters": {}
   }
+}
+```
 
 * **Actions:**  
   1. Verifies active Maut session.  
@@ -290,38 +412,51 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/sign\_transaction  
 * **Responses:**  
   * **200 OK** (Maut Policy Pass)  
-    {  
-      "activityId": "string",  
-      "status": "PENDING\_USER\_AUTHENTICATION"  
-    }
+  
+```json
+{
+  "activityId": "string",
+  "status": "PENDING_USER_AUTHENTICATION"
+}
+```
 
   * **403 Forbidden** (Maut Policy Fail)  
-    {  
-      "error": "Maut policy violation",  
-      "details": "string (optional, more specific reason)"  
-    }
+  
+```json
+{
+  "error": "Maut policy violation",
+  "details": "string (optional, more specific reason)"
+}
+```
 
   * **400 Bad Request**: Invalid payload.  
   * **401 Unauthorized**.  
   * **500 Internal Server Error**.
 
-**8\. POST /v1/activities/:activityId/submit-user-approval**
+**8. POST /v1/activities/:activityId/submit-user-approval**
+
+```http
+POST /v1/activities/:activityId/submit-user-approval
+```
 
 * **Purpose:** Submits the user's Passkey approval (assertion) to Turnkey for a pending signing activity.  
 * **Path Parameter:** activityId: The ID of the signing activity.  
 * **Request Body:** (Session authenticated via secure cookie)  
-  {  
-    "signedChallenge": {  
-      "rawId": "string (Base64URL encoded)",  
-      "response": {  
-        "clientDataJSON": "string (Base64URL encoded)",  
-        "authenticatorAssertion": "string (Base64URL encoded)", // Note: field name might vary  
-        "signature": "string (Base64URL encoded)"  
-      },  
-      "type": "public-key"  
-      // ... other fields from PublicKeyCredential  
-    }  
+
+```json
+{
+  "signedChallenge": {
+    "rawId": "string (Base64URL encoded)",
+    "response": {
+      "clientDataJSON": "string (Base64URL encoded)",
+      "authenticatorAssertion": "string (Base64URL encoded)", // Note: field name might vary
+      "signature": "string (Base64URL encoded)"
+    },
+    "type": "public-key"
+    // ... other fields from PublicKeyCredential
   }
+}
+```
 
 * **Actions:**  
   1. Verifies active Maut session.  
@@ -331,18 +466,25 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
   * POST /public/v1/approve\_activity (or equivalent for submitting authenticator response)  
 * **Responses:**  
   * **200 OK**  
-    {  
-      "status": "User approval submitted"  
-      // Optionally, current activity status can be returned  
-      // "activityStatus": "PROCESSING" | "COMPLETED" | "FAILED"  
-    }
+  
+```json
+{
+  "status": "User approval submitted"
+  // Optionally, current activity status can be returned
+  // "activityStatus": "PROCESSING" | "COMPLETED" | "FAILED"
+}
+```
 
   * **400 Bad Request**: Invalid assertion data.  
   * **401 Unauthorized**.  
   * **404 Not Found**: Activity not found or not in a state to be approved.  
   * **500 Internal Server Error**.
 
-**9\. GET /v1/activities/:activityId/status**
+**9. GET /v1/activities/:activityId/status**
+
+```http
+GET /v1/activities/:activityId/status
+```
 
 * **Purpose:** Allows the SDK to poll for the status of a signing activity and retrieve the result (signed transaction) upon completion.  
 * **Path Parameter:** activityId: The ID of the signing activity.  
@@ -354,30 +496,39 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
 * **Turnkey Calls:**  
   * GET /public/v1/get\_activity  
 * **Responses:**  
-  * **200 OK** (Status: PENDING\_USER\_AUTHENTICATION / PROCESSING)  
-    {  
-      "activityId": "string",  
-      "status": "PENDING\_USER\_AUTHENTICATION" | "PROCESSING"  
-    }
+  * **200 OK** (Status: PENDING_USER_AUTHENTICATION / PROCESSING)  
+  
+```json
+{
+  "activityId": "string",
+  "status": "PENDING_USER_AUTHENTICATION" | "PROCESSING"
+}
+```
 
   * **200 OK** (Status: COMPLETED)  
-    {  
-      "activityId": "string",  
-      "status": "COMPLETED",  
-      "result": {  
-        "signedTransaction": "string (hex-encoded)"  
-      }  
-    }
+  
+```json
+{
+  "activityId": "string",
+  "status": "COMPLETED",
+  "result": {
+    "signedTransaction": "string (hex-encoded)"
+  }
+}
+```
 
   * **200 OK** (Status: FAILED / REJECTED)  
-    {  
-      "activityId": "string",  
-      "status": "FAILED" | "REJECTED",  
-      "error": {  
-        "code": "string (error code)",  
-        "message": "string (error message)"  
-      }  
-    }
+  
+```json
+{
+  "activityId": "string",
+  "status": "FAILED" | "REJECTED",
+  "error": {
+    "code": "string (error code)",
+    "message": "string (error message)"
+  }
+}
+```
 
   * **401 Unauthorized**.  
   * **404 Not Found**: Activity not found.  
@@ -387,64 +538,86 @@ These are the server-side APIs hosted by Maut (e.g., on https://api.maut.ai) tha
 
 These are conceptual data models for the Maut Platform Backend, representing how data might be structured in Maut's database to support the above APIs. The exact schema will depend on the chosen database technology.
 
-**1\. ClientApplication Model**
+**1. ClientApplication Model**
 
-* **Purpose:** Stores information about Maut's clients (the applications integrating the Maut SDK).  
-* **Attributes:**  
-  * mautApiClientId: string (Primary Key, Unique) \- The unique ID Maut provides to the client application.  
-  * clientName: string \- Human-readable name of the client application (e.g., "Pond Inc.").  
-  * clientTokenVerificationKey: string \- Public key or secret used to verify clientAuthToken signatures issued by this client.  
-  * allowedOrigins: array\<string\> (Optional) \- CORS allowed origins for SDK communication.  
-  * status: string (e.g., "active", "inactive", "suspended").  
-  * createdAt: datetime.  
-  * updatedAt: datetime.
+* **Purpose:** Stores information about Maut's clients (the applications integrating the Maut SDK).
 
-**2\. MautUser Model**
+```typescript
+interface ClientApplication {
+  mautApiClientId: string;         // Primary Key, Unique - The unique ID Maut provides to the client application
+  clientName: string;              // Human-readable name of the client application (e.g., "Pond Inc.")
+  clientTokenVerificationKey: string; // Public key or secret used to verify clientAuthToken signatures issued by this client
+  allowedOrigins?: string[];      // Optional - CORS allowed origins for SDK communication
+  status: string;                 // e.g., "active", "inactive", "suspended"
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
 
-* **Purpose:** Represents an end-user within the Maut system, linking their identity across a client application and their Turnkey resources.  
-* **Attributes:**  
-  * mautUserId: string (Primary Key, Unique, e.g., UUID generated by Maut).  
-  * clientApplicationId: string (Foreign Key referencing ClientApplication.mautApiClientId) \- Identifies which client this user belongs to.  
-  * clientSystemUserId: string \- The unique identifier for the user *within the client's system* (from the sub claim of clientAuthToken).  
-  * turnkeySubOrganizationId: string (Unique, Nullable) \- The ID of the user's sub-organization in Turnkey.  
-  * turnkeyUserId: string (Unique, Nullable) \- The ID of the user's root user entity within their Turnkey sub-organization.  
-  * status: string (e.g., "pending\_enrollment", "active", "suspended").  
-  * createdAt: datetime.  
-  * updatedAt: datetime.  
-* **Indexes:**  
-  * Unique composite index on (clientApplicationId, clientSystemUserId) to ensure a user from a specific client is only registered once.
+**2. MautUser Model**
 
-**3\. UserWallet Model**
+* **Purpose:** Represents an end-user within the Maut system, linking their identity across a client application and their Turnkey resources.
 
-* **Purpose:** Stores details about a specific wallet (private key) associated with a MautUser. A user might have multiple wallets over time or for different purposes, though the current flow focuses on one primary wallet.  
-* **Attributes:**  
-  * walletId: string (Primary Key, Unique, e.g., UUID generated by Maut).  
-  * mautUserId: string (Foreign Key referencing MautUser.mautUserId).  
-  * turnkeyPrivateKeyId: string (Unique) \- The ID of the private key in Turnkey.  
-  * walletAddress: string (Unique, Indexed) \- The blockchain address (e.g., Ethereum address).  
-  * walletDisplayName: string (Nullable) \- User-friendly display name for the wallet.  
-  * isDefault: boolean (Default: true) \- Indicates if this is the default wallet for the user.  
-  * createdAt: datetime.  
-  * updatedAt: datetime.
+```typescript
+interface MautUser {
+  mautUserId: string;              // Primary Key, Unique, e.g., UUID generated by Maut
+  clientApplicationId: string;     // Foreign Key referencing ClientApplication.mautApiClientId
+  clientSystemUserId: string;      // The unique identifier for the user within the client's system
+  turnkeySubOrganizationId?: string; // Unique, Nullable - The ID of the user's sub-organization in Turnkey
+  turnkeyUserId?: string;         // Unique, Nullable - The ID of the user's root user entity in Turnkey
+  status: string;                 // e.g., "pending_enrollment", "active", "suspended"
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-**4\. UserAuthenticator Model**
+// Indexes:
+// Unique composite index on (clientApplicationId, clientSystemUserId)
+```
 
-* **Purpose:** Stores information about the authenticators (specifically Passkeys in this flow) registered by a MautUser with Turnkey. This helps Maut keep track of registered authenticators if needed, although Turnkey is the source of truth.  
-* **Attributes:**  
-  * authenticatorRecordId: string (Primary Key, Unique, e.g., UUID generated by Maut).  
-  * mautUserId: string (Foreign Key referencing MautUser.mautUserId).  
-  * turnkeyAuthenticatorId: string (Unique) \- The ID of the authenticator in Turnkey.  
-  * authenticatorType: string (e.g., "PASSKEY").  
-  * registrationDate: datetime.  
-  * status: string (e.g., "active", "revoked").  
-  * createdAt: datetime.  
-  * updatedAt: datetime.
+**3. UserWallet Model**
+
+* **Purpose:** Stores details about a specific wallet (private key) associated with a MautUser. A user might have multiple wallets over time or for different purposes, though the current flow focuses on one primary wallet.
+
+```typescript
+interface UserWallet {
+  walletId: string;                // Primary Key, Unique, e.g., UUID generated by Maut
+  mautUserId: string;              // Foreign Key referencing MautUser.mautUserId
+  turnkeyPrivateKeyId: string;     // Unique - The ID of the private key in Turnkey
+  walletAddress: string;           // Unique, Indexed - The blockchain address (e.g., Ethereum address)
+  walletDisplayName?: string;      // Nullable - User-friendly display name for the wallet
+  isDefault: boolean;              // Default: true - Indicates if this is the default wallet for the user
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+**4. UserAuthenticator Model**
+
+* **Purpose:** Stores information about the authenticators (specifically Passkeys in this flow) registered by a MautUser with Turnkey. This helps Maut keep track of registered authenticators if needed, although Turnkey is the source of truth.
+
+```typescript
+interface UserAuthenticator {
+  authenticatorRecordId: string;    // Primary Key, Unique, e.g., UUID generated by Maut
+  mautUserId: string;               // Foreign Key referencing MautUser.mautUserId
+  turnkeyAuthenticatorId: string;   // Unique - The ID of the authenticator in Turnkey
+  authenticatorType: string;        // e.g., "PASSKEY"
+  registrationDate: Date;
+  status: string;                  // e.g., "active", "revoked"
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
 
 **Relationships:**
 
-* A ClientApplication can have many MautUsers.  
-* A MautUser belongs to one ClientApplication.  
-* A MautUser can have one or more UserWallets (though the current flow implies one primary).  
-* A MautUser can have one or more UserAuthenticators.
+```typescript
+// Entity relationships:
+// 1. A ClientApplication can have many MautUsers
+// 2. A MautUser belongs to one ClientApplication
+// 3. A MautUser can have one or more UserWallets (though the current flow implies one primary)
+// 4. A MautUser can have one or more UserAuthenticators
+```
+
+This detailed outline should serve as a strong foundation for the development of the Maut Wallet SDK and its supporting backend infrastructure. Remember that exact Turnkey API endpoint names and payload structures should be verified against the official Turnkey API documentation.
 
 This detailed outline should serve as a strong foundation for the development of the Maut Wallet SDK and its supporting backend infrastructure. Remember that exact Turnkey API endpoint names and payload structures should be verified against the official Turnkey API documentation.
