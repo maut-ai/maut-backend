@@ -21,7 +21,7 @@ spring:
     clean-disabled: false
     validate-on-migrate: false
     out-of-order: true
-    locations: classpath:db/migration,classpath:db/modules/hello
+    locations: classpath:db/migration,classpath:db/modules/hello,classpath:db/modules/clientapplication,classpath:db/modules/authenticator,classpath:db/modules/transaction,classpath:db/modules/activity
 
 server:
   port: 8080

@@ -17,7 +17,7 @@ These guidelines are intended to help maintain a simple, understandable, and mai
     * **Minimize "Magic":** While Spring Boot's auto-configuration is powerful, be explicit in configurations (e.g., bean definitions) when it enhances understanding, particularly in complex scenarios like security configurations or intricate third-party integrations.
 
 3.  **Ensure Modularity and Single Responsibility:**
-    * **Develop Small, Focused Components:** Structure the application into well-defined modules or packages, each with a distinct responsibility. (Specific package naming conventions to be decided, e.g., `com.example.project.module.controller`).
+    * **Develop Small, Focused Components:** Structure the application into well-defined domain-specific modules. Each module should reside in its own package under `com.maut.core.modules.<domain_name>`. Within each domain module, components are further organized by type (e.g., `com.maut.core.modules.<domain_name>.model`, `com.maut.core.modules.<domain_name>.service`, `com.maut.core.modules.<domain_name>.controller`, `com.maut.core.modules.<domain_name>.dto`). This ensures clear separation of concerns and colocation of related logic.
     * **Adhere to the Single Responsibility Principle (SRP):** Each class and method should have one primary purpose. This makes it easier for LLMs to understand the scope and function of individual code units.
 
 ### II. Architectural and Design Standards
@@ -65,7 +65,8 @@ These guidelines are intended to help maintain a simple, understandable, and mai
 
 1.  **Define Clear JPA Entities (`@Entity`):**
     * Entities must accurately map to **PostgreSQL** tables.
-    * Use appropriate JPA annotations for relationships (`@OneToMany`, `@ManyToOne`, `@ManyToMany`), column specifics (`@Column`), and primary key generation (`@Id`, `@GeneratedValue`).
+    * **Primary Keys:** All primary key fields (typically named `id`) **must** use `java.util.UUID` as their type. Corresponding database columns should be of type `UUID`.
+    * Use appropriate JPA annotations for relationships (`@OneToMany`, `@ManyToOne`, `@ManyToMany`), column specifics (`@Column`), and primary key generation (`@Id`, `@GeneratedValue`). For UUIDs, `@GeneratedValue(generator = "UUID")` and `@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")` (from Hibernate) or similar standard JPA mechanisms should be used.
     * (Decisions pending on default fetch types, cascade types, and guidelines for lazy loading large fields).
     * *LLM Interaction:* Provide database schema (DDL) or clear descriptions of tables and relationships when requesting entity generation.
 
@@ -106,7 +107,8 @@ These guidelines are intended to help maintain a simple, understandable, and mai
 
 5.  **Maintain Standard Project Structure:**
     * Adhere to the standard **Maven** project directory layout (e.g., `src/main/java`, `src/main/resources`, `src/test/java`).
-    * (Decision pending on project-specific sub-package structures within `src/main/java`).
+    * **Project-Specific Sub-Package Structure:** All core business logic is organized into domain-specific modules under `com.maut.core.modules`. Each module, representing a distinct business domain (e.g., `session`, `user`, `clientapplication`), should contain its own sub-packages for `model`, `repository`, `service`, `controller`, `dto`, `security`, etc., as applicable. For example: `com.maut.core.modules.user.model`, `com.maut.core.modules.session.controller`.
+     * Common utilities or configurations that are not domain-specific and are shared across multiple modules may reside in appropriate packages under `com.maut.core.common` or `com.maut.core.config` respectively, but domain-specific logic must remain within its module.
 
 6.  **Implement Robust Error Handling:**
     * Develop a consistent error handling strategy.

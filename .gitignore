@@ -50,9 +50,6 @@ out/
 .settings
 .springBeans
 .sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
 
 ### NetBeans ###
 /nbproject/private/
@@ -118,4 +115,4 @@ flyway-repair*.sql
 docker-volumes/
 
 # Project specific
-todo_list.md
+# todo_list.md
