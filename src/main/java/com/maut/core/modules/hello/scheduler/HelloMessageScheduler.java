@@ -1,8 +1,8 @@
 package com.maut.core.modules.hello.scheduler;
 
 import com.maut.core.modules.hello.service.HelloMessageService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,12 +16,17 @@ import java.util.Random;
  * 10% of the time it deletes the message entirely.
  */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class HelloMessageScheduler {
 
+    private static final Logger log = LoggerFactory.getLogger(HelloMessageScheduler.class);
+    
     private final HelloMessageService helloMessageService;
     private final Random random = new Random();
+    
+    // Explicit constructor
+    public HelloMessageScheduler(HelloMessageService helloMessageService) {
+        this.helloMessageService = helloMessageService;
+    }
 
     @Value("${features.helloMessage.deleteFrequency}")
     private int deleteFrequency; // Percentage chance to delete instead of update (e.g., 10)

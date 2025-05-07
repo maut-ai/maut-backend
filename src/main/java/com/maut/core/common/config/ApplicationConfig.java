@@ -15,6 +15,7 @@ import org.springframework.context.annotation.PropertySource;
     value = "classpath:config/application-config.json", 
     factory = JsonPropertySourceFactory.class
 )
+// @PropertySource("classpath:config/test-features.properties") // Load standard properties file
 public class ApplicationConfig {
     // Configuration properties can be injected into other components using @Value or ConfigurationProperties
 }

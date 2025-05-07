@@ -1,7 +1,9 @@
 package com.maut.core;
 
+// import com.maut.core.common.config.ApplicationConfig; // No longer explicitly imported
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+// import org.springframework.context.annotation.Import; // No longer explicitly imported
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -11,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling // Enable scheduling for cron tasks across modules
+// @Import(ApplicationConfig.class) // Removed: component scan should suffice
 public class MautCoreApplication {
 
     public static void main(String[] args) {

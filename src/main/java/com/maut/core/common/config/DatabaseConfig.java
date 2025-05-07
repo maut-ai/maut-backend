@@ -1,8 +1,6 @@
 package com.maut.core.common.config;
 
 import com.maut.core.common.config.properties.DatabaseProperties;
-import org.flywaydb.core.Flyway;
-import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +22,7 @@ import java.util.Properties;
  */
 @Configuration
 @EnableTransactionManagement
-@EnableConfigurationProperties
+@EnableConfigurationProperties(DatabaseProperties.class)
 public class DatabaseConfig {
 
     private final DatabaseProperties databaseProperties;
@@ -40,11 +38,30 @@ public class DatabaseConfig {
     @Primary
     public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setUrl(databaseProperties.getUrl());
-        dataSource.setUsername(databaseProperties.getUsername());
-        dataSource.setPassword(databaseProperties.getPassword());
-        dataSource.setDriverClassName(databaseProperties.getDriverClassName());
+        
+        // Get property values with fallbacks
+        String url = getPropertyWithFallback(databaseProperties.getUrl(), "jdbc:postgresql://localhost:5432/maut_core");
+        String username = getPropertyWithFallback(databaseProperties.getUsername(), "postgres");
+        String password = getPropertyWithFallback(databaseProperties.getPassword(), "postgres");
+        String driverClassName = getPropertyWithFallback(databaseProperties.getDriverClassName(), "org.postgresql.Driver");
+        
+        // Set properties with fallback values
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+        dataSource.setDriverClassName(driverClassName);
+        
         return dataSource;
+    }
+    
+    /**
+     * Helper method to provide fallback values for database properties
+     * @param value The value from configuration
+     * @param fallback The fallback value to use if the configuration value is null or empty
+     * @return The configuration value or fallback if empty
+     */
+    private String getPropertyWithFallback(String value, String fallback) {
+        return (value == null || value.trim().isEmpty()) ? fallback : value;
     }
 
     /**
@@ -57,14 +74,24 @@ public class DatabaseConfig {
         em.setPackagesToScan("com.maut.core");
         
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        vendorAdapter.setShowSql(databaseProperties.getJpa().isShowSql());
+        
+        // Safely get JPA properties with null checks
+        boolean showSql = databaseProperties.getJpa() != null && databaseProperties.getJpa().isShowSql();
+        vendorAdapter.setShowSql(showSql);
         em.setJpaVendorAdapter(vendorAdapter);
         
         Properties jpaProperties = new Properties();
-        jpaProperties.put("hibernate.hbm2ddl.auto", databaseProperties.getJpa().getHibernateDdlAuto());
+        
+        // Add hibernate.hbm2ddl.auto with a fallback
+        String hibernateDdlAuto = databaseProperties.getJpa() != null && databaseProperties.getJpa().getHibernateDdlAuto() != null ? 
+                                 databaseProperties.getJpa().getHibernateDdlAuto() : "validate";
+        jpaProperties.put("hibernate.hbm2ddl.auto", hibernateDdlAuto);
+        
+        // Add dialect with default
+        jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         
         // Add any additional Hibernate properties from the configuration
-        if (databaseProperties.getJpa().getProperties() != null) {
+        if (databaseProperties.getJpa() != null && databaseProperties.getJpa().getProperties() != null) {
             databaseProperties.getJpa().getProperties().forEach(jpaProperties::put);
         }
         
@@ -82,24 +109,5 @@ public class DatabaseConfig {
         return transactionManager;
     }
 
-    /**
-     * Configures Flyway for database migrations.
-     */
-    @Bean
-    public FlywayMigrationStrategy flywayMigrationStrategy() {
-        return flyway -> {
-            // Configure Flyway settings from the properties
-            flyway.setBaselineOnMigrate(databaseProperties.getFlyway().isBaselineOnMigrate());
-            
-            // Set the locations if provided
-            if (databaseProperties.getFlyway().getLocations() != null && !databaseProperties.getFlyway().getLocations().isEmpty()) {
-                flyway.setLocations(databaseProperties.getFlyway().getLocations().toArray(new String[0]));
-            }
-            
-            // Only run migrations if flyway is enabled
-            if (databaseProperties.getFlyway().isEnabled()) {
-                flyway.migrate();
-            }
-        };
-    }
+    // Removed custom Flyway migration bean to let Spring Boot's auto-configuration handle it
 }

@@ -2,8 +2,8 @@ package com.maut.core.modules.hello.service;
 
 import com.maut.core.modules.hello.model.HelloMessage;
 import com.maut.core.modules.hello.repository.HelloMessageRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +18,17 @@ import java.util.Random;
  * Follows the single responsibility principle by focusing only on hello message operations.
  */
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class HelloMessageService {
+
+    private static final Logger log = LoggerFactory.getLogger(HelloMessageService.class);
 
     private final HelloMessageRepository helloMessageRepository;
     private final Random random = new Random();
+    
+    // Explicit constructor
+    public HelloMessageService(HelloMessageRepository helloMessageRepository) {
+        this.helloMessageRepository = helloMessageRepository;
+    }
     
     // List of random greetings to choose from when updating the message
     private static final List<String> RANDOM_GREETINGS = Arrays.asList(
@@ -62,9 +67,8 @@ public class HelloMessageService {
     @Transactional
     public HelloMessage createMessage(String message) {
         log.info("Creating new hello message: {}", message);
-        HelloMessage helloMessage = HelloMessage.builder()
-                .message(message)
-                .build();
+        HelloMessage helloMessage = new HelloMessage();
+        helloMessage.setMessage(message);
         return helloMessageRepository.save(helloMessage);
     }
 

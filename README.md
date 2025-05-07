@@ -65,12 +65,13 @@ maut-core-backend/
 │   │   │       └── MautCoreApplication.java
 │   │   └── resources/
 │   │       ├── config/                 # Global configuration 
+│   │       │   └── application.yml    # Spring Boot configuration
 │   │       ├── db/
 │   │       │   ├── migration/          # Global migrations
 │   │       │   └── modules/            # Module-specific migrations
 │   │       │       ├── hello/          # Hello module migrations
 │   │       │       └── [other-module]/ 
-│   │       └── application.properties
+│   │       └── application-config.json # Additional application settings
 │   └── test/                           # Tests follow same structure
 └── pom.xml
 ```
@@ -114,25 +115,36 @@ CREATE DATABASE maut_core;
 
 3. **Database Configuration:**
 
-Update database credentials in `src/main/resources/application.properties` if necessary:
+Update database credentials in `src/main/resources/application.yml` if necessary. Spring Boot will use these settings to configure the datasource. For example:
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/maut_core
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/maut_core
+    username: your_username
+    password: your_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none # Flyway handles schema management
+    show-sql: true
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+      hibernate.format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations:
+      - classpath:db/migration # Global migrations
+      - classpath:db/modules/hello # Hello module migrations
+      # Add other module migration paths here
 ```
 
 ## Configuration
 
-The application uses a combination of properties files and JSON configuration:
+The application primarily uses `src/main/resources/application.yml` for Spring Boot configuration, including server settings, database connections, Flyway, logging, and actuator endpoints.
 
-### Application Properties
-
-Standard Spring Boot configuration is in `src/main/resources/application.properties`.
-
-### JSON Configuration
-
-Custom application settings are in JSON format at `src/main/resources/config/application-config.json`:
+Additional application-specific settings (e.g., feature flags, module-specific parameters not directly managed by Spring Boot) can be found in `src/main/resources/config/application-config.json`:
 
 ```json
 {
@@ -151,11 +163,12 @@ Custom application settings are in JSON format at `src/main/resources/config/app
       "enabled": true,
       "description": "Hello message functionality"
     }
+    // Configuration for other modules can be added here
   }
 }
 ```
 
-These settings are loaded via a custom `JsonPropertySourceFactory` and can be accessed using Spring's `@Value` annotation or injected into configuration properties classes.
+These JSON settings are loaded via a custom `JsonPropertySourceFactory` and can be accessed using Spring's `@Value` annotation or injected into configuration properties classes.
 
 ## Running the Application
 
@@ -218,21 +231,27 @@ To add a new functional module to the application:
    ```
 
 2. **Add database migrations**:
-   - Create a migration file in `db/modules/[module-name]/`
-   - Use version numbers that follow the global versioning scheme
-   - Add the migration location to `application.properties`:
-     ```
-     spring.flyway.locations=classpath:db/migration,classpath:db/modules/hello,classpath:db/modules/[module-name]
+   - Create a migration file in `db/modules/[module-name]/` (e.g., `V1_0__[ModuleName]_Schema.sql`).
+   - Use version numbers that follow a logical sequence.
+   - Add the migration location to `src/main/resources/application.yml` under `spring.flyway.locations`:
+     ```yaml
+     spring:
+       flyway:
+         locations:
+           - classpath:db/migration         # Global
+           - classpath:db/modules/hello     # Existing module
+           - classpath:db/modules/[module-name] # New module
      ```
 
-3. **Add module configuration**:
-   - Update `application-config.json` to include the new module:
+3. **Add module configuration (if needed)**:
+   - If the new module requires specific configurations not managed by Spring Boot, update `src/main/resources/config/application-config.json` to include it:
      ```json
      "modules": {
        "hello": { "enabled": true },
        "[module-name]": { 
          "enabled": true,
          "description": "Description of the new module"
+         // other module-specific properties
        }
      }
      ```
