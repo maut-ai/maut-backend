@@ -21,3 +21,6 @@ web:
   commands:
     start: |
       java -jar target/maut-core-backend-0.0.1-SNAPSHOT.jar --server.port=$PORT
+
+relationships:
+  database: "core-db:postgresql"
