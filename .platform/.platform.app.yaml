@@ -1,6 +1,11 @@
 # The name of this app. Must be unique within a project.
 name: core
 
+# Specifies the location of the application's source code relative to the .platform.app.yaml file.
+# In this case, '..' means the parent directory.
+source:
+  root: ".."
+
 # The runtime the application uses. The 'type' key defines the base container
 # image that will be used to run the application. There is a separate base
 # container image for each primary language for the application,
@@ -14,13 +19,9 @@ disk: 1024 # Adjust as needed
 hooks:
   build: |
     set -e
-    echo "--- DEBUG: Current directory is $(pwd) ---"
-    echo "--- DEBUG: Listing /app contents ---"
-    ls -la /app
-    echo "--- DEBUG: Attempting Maven build from /app, assuming pom.xml is at /app/pom.xml ---"
-    mvn -f /app/pom.xml clean package -DskipTests
-    echo "--- DEBUG: Maven build finished. Listing target directory /app/target ---"
-    ls -la /app/target || true # List target, don't fail if not there (though it should be)
+    # Maven should now find pom.xml in the current directory (/app)
+    # after 'source.root' is processed.
+    mvn clean package -DskipTests
 
 # The web section configures how your application is exposed to the web.
 web:
