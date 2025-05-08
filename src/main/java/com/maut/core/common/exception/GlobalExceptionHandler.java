@@ -10,8 +10,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.persistence.EntityNotFoundException;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,6 +45,28 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.NOT_FOUND.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Handle NoHandlerFoundException - when no handler is found for the request URL.
+     *
+     * @param ex the exception
+     * @param request the HTTP request
+     * @return a ResponseEntity with appropriate 404 error message
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleNoHandlerFoundException(
+            NoHandlerFoundException ex, HttpServletRequest request) {
+        log.warn("No handler found for request URL: {} Method: {}", ex.getRequestURL(), ex.getHttpMethod()); // More specific log
+        
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message("The requested resource at path '" + request.getRequestURI() + "' was not found.")
+                .path(request.getRequestURI())
                 .build();
         
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);

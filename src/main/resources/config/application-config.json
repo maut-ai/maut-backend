@@ -5,7 +5,7 @@
   },
   "features": {
     "helloMessage": {
-      "cronSchedule": "0/10 * * * * ?",
+      "cronSchedule": "0 0 * * * ?",
       "deleteFrequency": 10
     }
   },

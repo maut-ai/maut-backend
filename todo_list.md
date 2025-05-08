@@ -24,7 +24,11 @@
   - [x] GET /v1/passkeys (placeholder logic implemented)
   - [x] DELETE /v1/passkeys/:passkeyId (placeholder logic implemented)
 - [x] **Task 4:** Set up initial database migrations for the new models using Flyway. (Core tables created: `client_applications`, `maut_users`, `user_authenticators`, `user_wallets`)
-- [ ] **Task 5:** Write unit and integration tests for all new services and controllers.
+- [x] **Task 5:** Implement JSON 404 error response
+  - [x] Create `ApiErrorResponse.java` DTO
+  - [x] Implement `GlobalExceptionHandler.java` with `NoHandlerFoundException` handler
+  - [x] Update `application.yml` to enable `NoHandlerFoundException` and configure resource mappings
+- [ ] **Task 6:** Write unit and integration tests for all new services and controllers.
     - [x] Unit tests for `AuthenticatorController.java` (Initial structure and basic tests created)
     - [ ] Unit tests for `AuthenticatorServiceImpl.java`
         - [x] `initiatePasskeyRegistration` (initial placeholder tests)  // Refers to pre-Turnkey tests
@@ -34,7 +38,7 @@
         - [x] `verifyPasskeyAssertion` (Placeholder implementation in AuthenticatorServiceImpl done)
         - [x] `findAndValidateUserAuthenticator` (Method implemented in AuthenticatorServiceImpl)
     - [x] Unit tests for `ActivityController.java` (Completed)
-- [ ] **Task 6:** Begin Turnkey API client integration.
+- [ ] **Task 7:** Begin Turnkey API client integration.
     - [x] Define Turnkey client interface and DTOs. (Completed)
     - [x] Implement Turnkey client methods for passkey registration (initiate/complete). (Completed)
     - [x] Implement Turnkey client method for passkey assertion verification. (Completed)
@@ -53,3 +57,7 @@
             - [ ] Run updated tests for `verifyPasskeyAssertion`.
     - [ ] General test file cleanup:
         - [ ] Clean up unused imports in `AuthenticatorServiceImplTest.java` once all test sections are active and tests pass.
+
+- [x] **Task 8:** Hello Module Enhancements
+  - [x] Update `HelloMessageScheduler` cron schedule in `application-config.json` to run once per hour (`0 0 * * * ?`).
+  - [x] Expand `RANDOM_GREETINGS` list in `HelloMessageService.java` with 40 additional greetings.
