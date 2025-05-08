@@ -4,8 +4,6 @@ import com.maut.core.common.config.properties.DatabaseProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -31,41 +29,13 @@ public class DatabaseConfig {
         this.databaseProperties = databaseProperties;
     }
 
-    /**
-     * Configures the datasource using properties from the JSON config.
-     */
-    @Bean
-    @Primary
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        
-        // Get property values with fallbacks
-        String url = getPropertyWithFallback(databaseProperties.getUrl(), "jdbc:postgresql://localhost:5432/maut_core");
-        String username = getPropertyWithFallback(databaseProperties.getUsername(), "postgres");
-        String password = getPropertyWithFallback(databaseProperties.getPassword(), "postgres");
-        String driverClassName = getPropertyWithFallback(databaseProperties.getDriverClassName(), "org.postgresql.Driver");
-        
-        // Set properties with fallback values
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-        dataSource.setDriverClassName(driverClassName);
-        
-        return dataSource;
-    }
-    
-    /**
-     * Helper method to provide fallback values for database properties
-     * @param value The value from configuration
-     * @param fallback The fallback value to use if the configuration value is null or empty
-     * @return The configuration value or fallback if empty
-     */
-    private String getPropertyWithFallback(String value, String fallback) {
-        return (value == null || value.trim().isEmpty()) ? fallback : value;
-    }
+    // Custom dataSource bean and getPropertyWithFallback removed.
+    // Spring Boot will now auto-configure the DataSource.
+    // Ensure local database settings are in application.properties or application.yml
 
     /**
      * Configures the entity manager factory with JPA and Hibernate properties.
+     * Spring Boot will inject its auto-configured DataSource here.
      */
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
