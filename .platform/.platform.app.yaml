@@ -13,8 +13,14 @@ disk: 1024 # Adjust as needed
 
 hooks:
   build: |
-    set -e # Exit immediately if a command exits with a non-zero status.
-    mvn clean package -DskipTests
+    set -e
+    echo "--- DEBUG: Current directory is $(pwd) ---"
+    echo "--- DEBUG: Listing /app contents ---"
+    ls -la /app
+    echo "--- DEBUG: Attempting Maven build from /app, assuming pom.xml is at /app/pom.xml ---"
+    mvn -f /app/pom.xml clean package -DskipTests
+    echo "--- DEBUG: Maven build finished. Listing target directory /app/target ---"
+    ls -la /app/target || true # List target, don't fail if not there (though it should be)
 
 # The web section configures how your application is exposed to the web.
 web:
