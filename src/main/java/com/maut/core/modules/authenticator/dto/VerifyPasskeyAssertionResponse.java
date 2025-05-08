@@ -13,6 +13,7 @@ public class VerifyPasskeyAssertionResponse {
 
     private boolean verified;
     private String authenticatorId; // The ID of the UserAuthenticator record
+    private String mautUserId; // The ID of the MautUser associated with the assertion
     private String message;
 
 }

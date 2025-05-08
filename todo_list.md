@@ -27,12 +27,29 @@
 - [ ] **Task 5:** Write unit and integration tests for all new services and controllers.
     - [x] Unit tests for `AuthenticatorController.java` (Initial structure and basic tests created)
     - [ ] Unit tests for `AuthenticatorServiceImpl.java`
-        - [x] `initiatePasskeyRegistration` (initial placeholder tests)
+        - [x] `initiatePasskeyRegistration` (initial placeholder tests)  // Refers to pre-Turnkey tests
         - [x] `listPasskeys` (comprehensive tests)
-        - [x] `deletePasskey` (tests for placeholder logic)
-        - [x] `completePasskeyRegistration` (comprehensive tests for current logic)
+        - [x] `deletePasskey` (tests for current logic)
+        - [x] `completePasskeyRegistration` (comprehensive tests for current logic, pre-Turnkey)
         - [x] `verifyPasskeyAssertion` (Placeholder implementation in AuthenticatorServiceImpl done)
-        - [ ] `findAndValidateUserAuthenticator` (Method needs implementation in AuthenticatorServiceImpl)
-        - [ ] `deletePasskey` (update tests once Turnkey client is integrated - Turnkey integration pending)
-        - [ ] `initiatePasskeyRegistration` (update tests once Turnkey client is integrated - Turnkey integration pending)
-    - [ ] Unit tests for `ActivityController.java`
+        - [x] `findAndValidateUserAuthenticator` (Method implemented in AuthenticatorServiceImpl)
+    - [x] Unit tests for `ActivityController.java` (Completed)
+- [ ] **Task 6:** Begin Turnkey API client integration.
+    - [x] Define Turnkey client interface and DTOs. (Completed)
+    - [x] Implement Turnkey client methods for passkey registration (initiate/complete). (Completed)
+    - [x] Implement Turnkey client method for passkey assertion verification. (Completed)
+    - [ ] `AuthenticatorServiceImpl` Turnkey Integration & Testing:
+        - **`initiatePasskeyRegistration`**:
+            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
+            - [x] Update unit tests in `AuthenticatorServiceImplTest.java` (Turnkey integration and lint errors resolved).
+            - [ ] Run updated tests for `initiatePasskeyRegistration`.
+        - **`completePasskeyRegistration`**:
+            - [ ] Integrate Turnkey client into `AuthenticatorServiceImpl`.
+            - [ ] Update unit tests in `AuthenticatorServiceImplTest.java`.
+            - [ ] Run updated tests for `completePasskeyRegistration`.
+        - **`verifyPasskeyAssertion`**:
+            - [ ] Integrate Turnkey client into `AuthenticatorServiceImpl`.
+            - [ ] Update unit tests in `AuthenticatorServiceImplTest.java`.
+            - [ ] Run updated tests for `verifyPasskeyAssertion`.
+    - [ ] General test file cleanup:
+        - [ ] Clean up unused imports in `AuthenticatorServiceImplTest.java` once all test sections are active and tests pass.

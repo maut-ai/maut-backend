@@ -1,8 +1,11 @@
 package com.maut.core.modules.authenticator.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.maut.core.common.exception.AuthenticationException;
 import com.maut.core.common.exception.InvalidRequestException;
 import com.maut.core.common.exception.ResourceNotFoundException;
-// import com.maut.core.common.exception.TurnkeyOperationException; // For actual Turnkey calls
 import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationRequest;
 import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationResponse;
 import com.maut.core.modules.authenticator.dto.InitiatePasskeyRegistrationResponse;
@@ -16,15 +19,14 @@ import com.maut.core.modules.authenticator.repository.UserAuthenticatorRepositor
 import com.maut.core.modules.user.model.MautUser;
 import com.maut.core.modules.wallet.model.UserWallet;
 import com.maut.core.modules.wallet.repository.UserWalletRepository;
-// import com.maut.core.external.turnkey.TurnkeyService; // To be created
-// import com.maut.core.external.turnkey.model.WebAuthnRegistrationChallenge;
+import com.maut.core.integration.turnkey.TurnkeyClient;
+import com.maut.core.integration.turnkey.dto.TurnkeyInitiatePasskeyRegistrationRequest;
+import com.maut.core.integration.turnkey.dto.TurnkeyInitiatePasskeyRegistrationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
-import com.maut.core.common.exception.AuthenticationException; // Assuming this exception exists or will be created
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +35,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
     private final UserWalletRepository userWalletRepository;
     private final UserAuthenticatorRepository userAuthenticatorRepository;
-    // private final TurnkeyService turnkeyService; // To be uncommented
+    private final TurnkeyClient turnkeyClient;
+    private final ObjectMapper objectMapper;
 
     @Override
     public InitiatePasskeyRegistrationResponse initiatePasskeyRegistration(MautUser mautUser) {
@@ -44,7 +47,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         log.info("Initiating passkey registration for MautUser ID: {}", mautUser.getId());
 
         // 1. Find the user's wallet to get the Turnkey Sub-Organization ID
-        // Assuming one wallet per user for now as per current enrollment flow.
         UserWallet userWallet = userWalletRepository.findByMautUser(mautUser)
             .stream().findFirst()
             .orElseThrow(() -> {
@@ -58,30 +60,36 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new IllegalStateException("User wallet is missing Turnkey Sub-Organization ID.");
         }
 
-        // --- Placeholder for Turnkey Integration --- //
-        // try {
-        //     log.debug("Requesting WebAuthn registration challenge from Turnkey for sub-organization ID: {}", turnkeySubOrganizationId);
-        //     WebAuthnRegistrationChallenge challenge = turnkeyService.getWebAuthnRegistrationChallenge(turnkeySubOrganizationId, mautUser.getClientSystemUserId()); // Or mautUser.getId().toString()
-        //     log.info("Received WebAuthn challenge from Turnkey for MautUser ID: {}", mautUser.getId());
-        //     return new InitiatePasskeyRegistrationResponse(challenge.getChallenge(), challenge.getAttestationRequest());
-        // } catch (Exception e) {
-        //     log.error("Error fetching WebAuthn challenge from Turnkey for MautUser ID: {}: {}", mautUser.getId(), e.getMessage(), e);
-        //     throw new TurnkeyOperationException("Failed to fetch WebAuthn challenge from Turnkey: " + e.getMessage(), e);
-        // }
-        // --- End Placeholder --- //
+        TurnkeyInitiatePasskeyRegistrationRequest turnkeyRequest = TurnkeyInitiatePasskeyRegistrationRequest.builder()
+                .mautUserId(mautUser.getId().toString())
+                .turnkeySubOrganizationId(turnkeySubOrganizationId)
+                .authenticatorName("New Passkey")
+                .build();
 
-        // For now, returning placeholder data
-        log.warn("TurnkeyService not yet implemented. Returning placeholder challenge data for MautUser ID: {}", mautUser.getId());
-        String placeholderChallenge = "placeholder_challenge_string_for_" + mautUser.getId();
-        Map<String, Object> placeholderAttestationRequest = new HashMap<>();
-        placeholderAttestationRequest.put("rp", Map.of("name", "Maut Demo RP", "id", "localhost"));
-        placeholderAttestationRequest.put("user", Map.of("id", mautUser.getId().toString(), "name", mautUser.getClientSystemUserId(), "displayName", mautUser.getClientSystemUserId()));
-        placeholderAttestationRequest.put("pubKeyCredParams", new Object[]{Map.of("type", "public-key", "alg", -7), Map.of("type", "public-key", "alg", -257)});
-        placeholderAttestationRequest.put("authenticatorSelection", Map.of("authenticatorAttachment", "platform", "requireResidentKey", true, "userVerification", "required"));
-        placeholderAttestationRequest.put("timeout", 360000);
-        placeholderAttestationRequest.put("attestation", "direct");
+        TurnkeyInitiatePasskeyRegistrationResponse turnkeyResponse = turnkeyClient.initiatePasskeyRegistration(turnkeyRequest);
 
-        return new InitiatePasskeyRegistrationResponse(placeholderChallenge, placeholderAttestationRequest);
+        // Ensure Turnkey response is valid
+        if (turnkeyResponse == null) {
+            log.error("TurnkeyClient returned null response for MautUser ID: {}", mautUser.getId());
+            throw new AuthenticationException("Failed to initiate passkey registration with Turnkey: No response.");
+        }
+        if (turnkeyResponse.getPublicKeyCredentialCreationOptions() == null || turnkeyResponse.getPublicKeyCredentialCreationOptions().isBlank()) {
+            log.error("TurnkeyClient response missing public key credential creation options for MautUser ID: {}", mautUser.getId());
+            throw new AuthenticationException("Failed to initiate passkey registration with Turnkey: Invalid response data.");
+        }
+
+        Map<String, Object> attestationRequestMap;
+        try {
+            attestationRequestMap = objectMapper.readValue(turnkeyResponse.getPublicKeyCredentialCreationOptions(), new TypeReference<Map<String, Object>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing Turnkey public key credential creation options JSON for user ID: {}: {}", mautUser.getId(), e.getMessage());
+            throw new AuthenticationException("Error processing passkey registration data from Turnkey.", e);
+        }
+
+        return InitiatePasskeyRegistrationResponse.builder()
+                .turnkeyChallenge(turnkeyResponse.getChallenge())
+                .turnkeyAttestationRequest(attestationRequestMap)
+                .build();
     }
 
     @Override
@@ -109,27 +117,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             log.error("UserWallet ID: {} for MautUser ID: {} has no Turnkey Sub-Organization ID.", userWallet.getId(), mautUser.getId());
             throw new IllegalStateException("User wallet is missing Turnkey Sub-Organization ID.");
         }
-
-        // --- Placeholder for Turnkey Integration --- //
-        // String turnkeyAuthenticatorId;
-        // String externalAuthenticatorId; // e.g., aaguid or credentialId from WebAuthn
-        // try {
-        //     log.debug("Sending WebAuthn attestation to Turnkey for sub-organization ID: {}", turnkeySubOrganizationId);
-        //     // This Turnkey service method would take subOrgId, attestation, challenge (if needed from session), userId, etc.
-        //     // And return details like the new authenticator's ID in Turnkey and its external identifier.
-        //     // TurnkeyCompletePasskeyRegistrationResult turnkeyResult = turnkeyService.completeWebAuthnRegistration(
-        //     // turnkeySubOrganizationId, request.getTurnkeyAttestation(), mautUser.getClientSystemUserId());
-        //     // turnkeyAuthenticatorId = turnkeyResult.getTurnkeyAuthenticatorId();
-        //     // externalAuthenticatorId = turnkeyResult.getExternalAuthenticatorId(); // Important for identifying the passkey
-        //     log.info("Passkey registration completed with Turnkey for MautUser ID: {}", mautUser.getId());
-        // } catch (TurnkeyOperationException e) {
-        //     log.error("Turnkey operation failed during passkey registration for MautUser ID: {}: {}", mautUser.getId(), e.getMessage(), e);
-        //     throw e;
-        // } catch (Exception e) {
-        //     log.error("Error completing passkey registration with Turnkey for MautUser ID: {}: {}", mautUser.getId(), e.getMessage(), e);
-        //     throw new TurnkeyOperationException("Failed to complete passkey registration with Turnkey: " + e.getMessage(), e);
-        // }
-        // --- End Placeholder --- //
 
         // For now, using placeholder data
         log.warn("TurnkeyService not yet implemented. Simulating successful passkey registration for MautUser ID: {}", mautUser.getId());
@@ -258,72 +245,56 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
     @Override
     public VerifyPasskeyAssertionResponse verifyPasskeyAssertion(MautUser mautUser, VerifyPasskeyAssertionRequest request) {
-        log.info("Attempting to verify passkey assertion.");
-
         if (request == null) {
             log.error("VerifyPasskeyAssertionRequest cannot be null.");
             throw new InvalidRequestException("Request cannot be null.");
         }
         if (request.getCredentialId() == null || request.getCredentialId().isBlank()) {
-            log.error("Credential ID is missing in VerifyPasskeyAssertionRequest.");
-            throw new InvalidRequestException("Passkey credential ID is required.");
+            log.error("Passkey Credential ID is required for assertion verification.");
+            throw new InvalidRequestException("Passkey Credential ID is required.");
         }
         if (request.getTurnkeyAssertion() == null || request.getTurnkeyAssertion().isEmpty()) {
-            log.error("Turnkey assertion data is missing in VerifyPasskeyAssertionRequest.");
-            throw new InvalidRequestException("Turnkey assertion data is required.");
+            log.error("Turnkey Assertion data is required for assertion verification.");
+            throw new InvalidRequestException("Turnkey Assertion data is required.");
         }
 
         String credentialId = request.getCredentialId();
-        log.debug("Verifying assertion for credential ID: {}", credentialId);
+        log.info("Attempting to verify passkey assertion for credential ID: {}", credentialId);
 
-        // 1. Find the UserAuthenticator by credentialId
-        //    UserAuthenticator userAuthenticator = userAuthenticatorRepository.findByExternalCredentialId(credentialId) // Assuming such a method exists
-        //        .orElseThrow(() -> {
-        //            log.warn("No UserAuthenticator found for credential ID: {}", credentialId);
-        //            return new ResourceNotFoundException("Passkey not found for the given credential ID.");
-        //        });
-        // For placeholder, we'll simulate finding one
-        UserAuthenticator userAuthenticator = new UserAuthenticator(); // Placeholder
-        userAuthenticator.setId(java.util.UUID.randomUUID());
-        userAuthenticator.setExternalAuthenticatorId(credentialId);
-        userAuthenticator.setEnabled(true);
-        userAuthenticator.setMautUser(mautUser != null ? mautUser : new MautUser()); // Simulate association or new user identification
-        if (mautUser == null) { // If mautUser was null, the passkey itself identifies the user.
-            // In a real scenario, userAuthenticator.getMautUser() would be populated from the database.
-            // For now, if mautUser was null, we'll assume a placeholder MautUser associated with the authenticator.
-             MautUser identifiedUser = new MautUser();
-             identifiedUser.setId(java.util.UUID.randomUUID());
-             userAuthenticator.setMautUser(identifiedUser);
-             mautUser = identifiedUser; // This is the user we've identified
-             log.info("Passkey identified MautUser ID: {}", mautUser.getId());
-        }
+        UserAuthenticator userAuthenticator = findAndValidateUserAuthenticator(mautUser, credentialId);
 
-        // 2. If mautUser was provided (e.g., 2FA or re-auth), validate ownership
-        // else if (mautUser != null && !userAuthenticator.getMautUser().getId().equals(mautUser.getId())) {
-        //     log.error("Passkey credential ID {} does not belong to MautUser ID {}. Belongs to MautUser ID {}.",
-        //             credentialId, mautUser.getId(), userAuthenticator.getMautUser().getId());
-        //     throw new AuthenticationException("Passkey does not belong to the authenticated user.");
-        // }
-
-        if (!userAuthenticator.isEnabled()) {
-            log.warn("Attempt to use disabled passkey with credential ID: {} for MautUser ID: {}", credentialId, userAuthenticator.getMautUser().getId());
-            throw new AuthenticationException("Passkey is disabled.");
-        }
+        // If mautUser was initially null, it means we identified the user via the passkey.
+        // The findAndValidateUserAuthenticator method handles the case where mautUser is provided
+        // and ensures the passkey belongs to that user.
+        // If mautUser was null coming in, userAuthenticator.getMautUser() is the identified user.
+        MautUser identifiedUser = userAuthenticator.getMautUser();
+        log.info("Passkey credential ID {} is associated with MautUser ID: {}", credentialId, identifiedUser.getId());
 
         // --- Placeholder for Turnkey Integration --- //
+        // UserWallet userWallet = userWalletRepository.findByMautUser(identifiedUser)
+        //    .stream().findFirst()
+        //    .orElseThrow(() -> {
+        //        log.error("No UserWallet found for MautUser ID: {}. Cannot verify passkey assertion.", identifiedUser.getId());
+        //        return new ResourceNotFoundException("User wallet not found, cannot verify passkey assertion.");
+        //    });
+        // String turnkeySubOrganizationId = userWallet.getTurnkeySubOrganizationId();
+        // if (turnkeySubOrganizationId == null || turnkeySubOrganizationId.isBlank()) {
+        //    log.error("UserWallet ID: {} for MautUser ID: {} has no Turnkey Sub-Organization ID.", userWallet.getId(), identifiedUser.getId());
+        //    throw new IllegalStateException("User wallet is missing Turnkey Sub-Organization ID.");
+        // }
         // try {
-        //     log.debug("Verifying assertion with Turnkey for MautUser ID: {} and credential ID: {}", userAuthenticator.getMautUser().getId(), credentialId);
-        //     boolean turnkeyVerificationResult = turnkeyService.verifyAssertion(mautUser.getTurnkeySubOrganizationId(), request.getTurnkeyAssertion());
+        //     log.debug("Verifying assertion with Turnkey for MautUser ID: {} and credential ID: {}", identifiedUser.getId(), credentialId);
+        //     boolean turnkeyVerificationResult = turnkeyClient.verifyAssertion(turnkeySubOrganizationId, request.getTurnkeyAssertion());
         //     if (!turnkeyVerificationResult) {
-        //         log.warn("Turnkey assertion verification failed for MautUser ID: {} and credential ID: {}", userAuthenticator.getMautUser().getId(), credentialId);
+        //         log.warn("Turnkey assertion verification failed for MautUser ID: {} and credential ID: {}", identifiedUser.getId(), credentialId);
         //         throw new AuthenticationException("Passkey assertion verification failed.");
         //     }
-        //     log.info("Turnkey assertion verification successful for MautUser ID: {} and credential ID: {}", userAuthenticator.getMautUser().getId(), credentialId);
+        //     log.info("Turnkey assertion verification successful for MautUser ID: {} and credential ID: {}", identifiedUser.getId(), credentialId);
         // } catch (TurnkeyOperationException e) {
-        //     log.error("Turnkey operation error during assertion verification for MautUser ID: {}: {}", userAuthenticator.getMautUser().getId(), e.getMessage(), e);
+        //     log.error("Turnkey operation error during assertion verification for MautUser ID: {}: {}", identifiedUser.getId(), e.getMessage(), e);
         //     throw e; // Re-throw
         // } catch (Exception e) {
-        //     log.error("Unexpected error during Turnkey assertion verification for MautUser ID: {}: {}", userAuthenticator.getMautUser().getId(), e.getMessage(), e);
+        //     log.error("Unexpected error during Turnkey assertion verification for MautUser ID: {}: {}", identifiedUser.getId(), e.getMessage(), e);
         //     throw new AuthenticationException("An unexpected error occurred during passkey verification.", e);
         // }
         // --- End Placeholder --- //
@@ -336,19 +307,73 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             // Update last used timestamp
             // userAuthenticator.setLastUsedAt(Instant.now());
             // userAuthenticatorRepository.save(userAuthenticator);
-            log.info("Passkey assertion verified successfully for MautUser ID: {} with authenticator ID: {}", userAuthenticator.getMautUser().getId(), userAuthenticator.getId());
+            log.info("Passkey assertion verified successfully for MautUser ID: {} with authenticator ID: {}", identifiedUser.getId(), userAuthenticator.getId());
             return VerifyPasskeyAssertionResponse.builder()
                     .verified(true)
-                    .authenticatorId(userAuthenticator.getId().toString())
+                    .authenticatorId(userAuthenticator.getId().toString()) // Return internal authenticator ID
+                    .mautUserId(identifiedUser.getId().toString()) // Return identified MautUser ID
                     .message("Passkey verified successfully.")
                     .build();
         } else {
             // This path should ideally be covered by exceptions thrown from Turnkey client or validation logic
-            log.warn("Passkey assertion verification failed (simulated) for MautUser ID: {} with authenticator ID: {}", userAuthenticator.getMautUser().getId(), userAuthenticator.getId());
+            log.warn("Passkey assertion verification failed (simulated) for MautUser ID: {} with authenticator ID: {}", identifiedUser.getId(), userAuthenticator.getId());
             return VerifyPasskeyAssertionResponse.builder()
                     .verified(false)
                     .message("Passkey verification failed.")
                     .build();
         }
+    }
+
+    /**
+     * Finds a UserAuthenticator by its credential ID (external authenticator ID) and validates its status and ownership.
+     * This method is intended for internal use by services like verifyPasskeyAssertion.
+     *
+     * @param mautUser The MautUser who is attempting to use the passkey. Can be null if the user is being identified by the passkey itself.
+     * @param passkeyCredentialId The external credential ID of the passkey (e.g., from a WebAuthn assertion).
+     * @return The validated UserAuthenticator if found and valid.
+     * @throws AuthenticationException if the passkey is not found, not enabled, or (if mautUser is provided) does not belong to the user.
+     */
+    private UserAuthenticator findAndValidateUserAuthenticator(MautUser mautUser, String passkeyCredentialId) {
+        if (passkeyCredentialId == null || passkeyCredentialId.isBlank()) {
+            log.warn("Attempted to find authenticator with null or blank credential ID.");
+            throw new AuthenticationException("Passkey credential ID cannot be blank.");
+        }
+
+        UserAuthenticator userAuthenticator = userAuthenticatorRepository.findByTurnkeyAuthenticatorId(passkeyCredentialId)
+                .orElseThrow(() -> {
+                    log.warn("Passkey not found for credential ID: {}", passkeyCredentialId);
+                    return new AuthenticationException("Passkey not found.");
+                });
+
+        // If mautUser is provided (e.g., for 2FA or re-auth), validate ownership.
+        if (mautUser != null) {
+            if (userAuthenticator.getMautUser() == null) {
+                 log.error("Critical: UserAuthenticator ID {} found by credential ID {} has no associated MautUser.", userAuthenticator.getId(), passkeyCredentialId);
+                 throw new AuthenticationException("Passkey is not associated with any user account.");
+            }
+            if (!userAuthenticator.getMautUser().getId().equals(mautUser.getId())) {
+                log.error("Passkey credential ID {} (UserAuthenticator ID {}) does not belong to the authenticated MautUser ID {}. It belongs to MautUser ID {}.",
+                        passkeyCredentialId, userAuthenticator.getId(), mautUser.getId(), userAuthenticator.getMautUser().getId());
+                throw new AuthenticationException("Passkey does not belong to the authenticated user.");
+            }
+        } else {
+            // If mautUser is null, it means we are identifying the user by the passkey.
+            // We need to ensure the found authenticator actually has an associated user.
+            if (userAuthenticator.getMautUser() == null) {
+                log.error("Critical: UserAuthenticator ID {} found by credential ID {} (for user identification) has no associated MautUser.", userAuthenticator.getId(), passkeyCredentialId);
+                throw new AuthenticationException("Passkey is not associated with any user account, cannot identify user.");
+            }
+            log.info("Passkey credential ID {} successfully identified MautUser ID: {}", passkeyCredentialId, userAuthenticator.getMautUser().getId());
+        }
+
+        if (!userAuthenticator.isEnabled()) {
+            log.warn("Attempt to use disabled passkey with credential ID: {} for MautUser ID: {}",
+                    passkeyCredentialId, userAuthenticator.getMautUser() != null ? userAuthenticator.getMautUser().getId() : "unknown");
+            throw new AuthenticationException("Passkey is disabled.");
+        }
+
+        log.debug("UserAuthenticator ID {} (Credential ID: {}) found and validated for MautUser ID: {}",
+                userAuthenticator.getId(), passkeyCredentialId, userAuthenticator.getMautUser() != null ? userAuthenticator.getMautUser().getId() : "unknown (identified by passkey)");
+        return userAuthenticator;
     }
 }
