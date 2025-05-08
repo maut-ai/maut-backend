@@ -1,0 +1,28 @@
+# The name of this app. Must be unique within a project.
+name: core
+
+# The runtime the application uses. The 'type' key defines the base container
+# image that will be used to run the application. There is a separate base
+# container image for each primary language for the application,
+# in multiple versions. Check the Java documentation
+# (https://docs.platform.sh/languages/java.html#supported-versions)
+# to find the supported versions for the 'java' type.
+type: 'java:21'
+
+disk: 1024 # Adjust as needed
+
+hooks:
+  build: |
+    set -e
+    # Maven should now find pom.xml in the current directory (/app)
+    # after 'source.root' is processed.
+    mvn clean package -DskipTests
+
+# The web section configures how your application is exposed to the web.
+web:
+  commands:
+    start: |
+      java -jar target/maut-core-backend-0.0.1-SNAPSHOT.jar --server.port=$PORT
+
+relationships:
+  database: "core-db:postgresql"
