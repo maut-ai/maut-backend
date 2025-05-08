@@ -8,3 +8,16 @@ name: core
 # (https://docs.platform.sh/languages/java.html#supported-versions)
 # to find the supported versions for the 'java' type.
 type: 'java:21'
+
+disk: 1024 # Adjust as needed
+
+hooks:
+  build: |
+    set -e # Exit immediately if a command exits with a non-zero status.
+    mvn clean package -DskipTests
+
+# The web section configures how your application is exposed to the web.
+web:
+  commands:
+    start: |
+      java -jar target/maut-core-backend-0.0.1-SNAPSHOT.jar --server.port=$PORT
