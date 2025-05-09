@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -77,15 +78,32 @@ public class GlobalExceptionHandler {
     // Consider adding more specific common exceptions like EntityNotFoundException, etc.
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled exception for request {}: {}. Error: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+    public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex, HttpServletRequest request) {
+        HttpStatus statusToReturn = HttpStatus.INTERNAL_SERVER_ERROR;
+        String messageToReturn = "An unexpected error occurred. Please try again later.";
+        String errorReasonToReturn = HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase();
+
+        if (ex instanceof ResponseStatusException) {
+            ResponseStatusException rse = (ResponseStatusException) ex;
+            statusToReturn = rse.getStatus();
+            messageToReturn = rse.getReason() != null ? rse.getReason() : statusToReturn.getReasonPhrase();
+            errorReasonToReturn = statusToReturn.getReasonPhrase();
+            // Log ResponseStatusExceptions at WARN level as they are handled exceptions with specific statuses
+            log.warn("Handled ResponseStatusException for {}: {} - Status: {}, Reason: '{}', Path: {}", 
+                request.getMethod(), request.getRequestURI(), statusToReturn, messageToReturn, request.getRequestURI(), rse);
+        } else {
+            // Log truly unexpected exceptions at ERROR level
+            log.error("Unexpected exception for {}: {}. Path: {}", 
+                request.getMethod(), request.getRequestURI(), request.getRequestURI(), ex);
+        }
+
         ErrorResponse errorResponse = new ErrorResponse(
                 Instant.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected error occurred. Please contact support if the issue persists.", // Generic message for users
+                statusToReturn.value(),
+                errorReasonToReturn,
+                messageToReturn,
                 request.getRequestURI()
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errorResponse, statusToReturn);
     }
 }
