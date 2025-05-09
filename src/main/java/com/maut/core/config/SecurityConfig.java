@@ -1,5 +1,6 @@
 package com.maut.core.config;
 
+import com.maut.core.config.security.CustomAccessDeniedHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
+    public SecurityConfig(CustomAccessDeniedHandler customAccessDeniedHandler) {
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -22,6 +29,9 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .exceptionHandling(exceptions -> exceptions
+                .accessDeniedHandler(customAccessDeniedHandler) // Use custom access denied handler
+            )
             .authorizeHttpRequests(authz -> authz
                 // Permit unauthenticated POST requests to the client applications endpoint
                 .mvcMatchers(HttpMethod.POST, "/v1/admin/client-applications").permitAll()
