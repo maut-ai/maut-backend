@@ -118,20 +118,20 @@ public class JwtUtil {
     }
 
     public Boolean validateClientAuthToken(String token, ClientApplication clientApp) { 
-        if (clientApp == null || clientApp.getClientSecretHash() == null) {
-            System.err.println("Client application or client secret hash is null.");
+        if (clientApp == null || clientApp.getClientSecret() == null) {
+            System.err.println("Client application or client secret is null.");
             return false;
         }
         SecretKey clientSigningKey;
         try {
-            byte[] secretBytes = clientApp.getClientSecretHash().getBytes();
+            byte[] secretBytes = clientApp.getClientSecret().getBytes();
             if (secretBytes.length < 32) { 
                  System.err.println("Client secret for app " + clientApp.getMautApiClientId() + " is too short for HS256. THIS IS INSECURE.");
                  return false; 
             }
             clientSigningKey = Keys.hmacShaKeyFor(secretBytes);
         } catch (Exception e) {
-            System.err.println("Error creating signing key from client secret hash for app " + clientApp.getMautApiClientId() + ": " + e.getMessage());
+            System.err.println("Error creating signing key from client secret for app " + clientApp.getMautApiClientId() + ": " + e.getMessage());
             return false;
         }
 
@@ -158,14 +158,14 @@ public class JwtUtil {
     public String extractClientSystemUserIdFromClientToken(String token, ClientApplication clientApp) { 
         SecretKey clientSigningKey;
          try {
-            byte[] secretBytes = clientApp.getClientSecretHash().getBytes();
+            byte[] secretBytes = clientApp.getClientSecret().getBytes();
              if (secretBytes.length < 32) {
                  System.err.println("Client secret for app " + clientApp.getMautApiClientId() + " is too short for HS256 when extracting user ID. THIS IS INSECURE.");
                  return null;
              }
             clientSigningKey = Keys.hmacShaKeyFor(secretBytes);
         } catch (Exception e) {
-            System.err.println("Error creating signing key from client secret hash for app " + clientApp.getMautApiClientId() + " when extracting user ID: " + e.getMessage());
+            System.err.println("Error creating signing key from client secret for app " + clientApp.getMautApiClientId() + " when extracting user ID: " + e.getMessage());
             return null;
         }
 

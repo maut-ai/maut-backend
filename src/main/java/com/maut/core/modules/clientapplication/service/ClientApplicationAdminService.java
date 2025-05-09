@@ -6,7 +6,6 @@ import com.maut.core.modules.clientapplication.model.ClientApplication;
 import com.maut.core.modules.clientapplication.repository.ClientApplicationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,6 @@ import java.util.UUID;
 public class ClientApplicationAdminService {
 
     private final ClientApplicationRepository clientApplicationRepository;
-    private final PasswordEncoder passwordEncoder; // Assumes a PasswordEncoder bean is configured
     private static final int SECRET_LENGTH = 32; // Length of the random part of the secret in bytes
 
     @Transactional
@@ -35,12 +33,11 @@ public class ClientApplicationAdminService {
 
         String mautApiClientId = "cid-" + UUID.randomUUID().toString();
         String plainTextSecret = generateSecureRandomSecret();
-        String hashedSecret = passwordEncoder.encode(plainTextSecret);
 
         ClientApplication newClientApp = new ClientApplication();
         newClientApp.setClientName(request.getClientName());
         newClientApp.setMautApiClientId(mautApiClientId);
-        newClientApp.setClientSecretHash(hashedSecret);
+        newClientApp.setClientSecret(plainTextSecret);
         newClientApp.setEnabled(true); // Enabled by default
         // newClientApp.setAllowedOrigins(new HashSet<>()); // Initialize if needed, or handle via update endpoint
 

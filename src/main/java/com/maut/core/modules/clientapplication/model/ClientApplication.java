@@ -40,11 +40,12 @@ public class ClientApplication {
     private String clientName;
 
     /**
-     * Hashed client secret. The actual secret is known only to the client application and Maut (during initial setup).
-     * This hash is used to verify the client's identity for certain operations if symmetric key crypto is used.
+     * Stores the plain text client secret used for JWT signing and validation.
+     * This secret is essential for the client application to authenticate itself
+     * and obtain access tokens.
      */
-    @Column(nullable = false, length = 1024) // Length for hash
-    private String clientSecretHash;
+    @Column(name = "client_secret", nullable = false, length = 255) 
+    private String clientSecret; 
 
     /**
      * List of allowed origins (e.g., domains) from which this client application can make requests.
@@ -69,6 +70,12 @@ public class ClientApplication {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Constructors, Getters, Setters, etc. will be handled by Lombok's @Data and @NoArgsConstructor
-    // Custom business logic methods can be added here if needed.
+    // Explicitly adding getter and setter for clientSecret to ensure availability
+    public String getClientSecret() {
+        return this.clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
 }

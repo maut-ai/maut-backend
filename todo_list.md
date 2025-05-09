@@ -68,3 +68,10 @@
   - [x] `POST /v1/admin/client-applications`: Create a new client application (given a name, returns ID and secret).
     - Status: Implemented, currently unauthenticated.
     - TODO: Add authentication/authorization to this endpoint.
+
+- [x] **Task 13:** Resolve JWT client secret handling and related startup failures.
+  - Status: Done (Ensured `ClientApplication` uses plain text `clientSecret`, fixed Flyway migration, application starts successfully).
+
+- [ ] **Task 14:** Address widespread unresolved import and type lint errors across the codebase.
+  - Status: Pending
+  - Notes: Investigate issues with DTOs, common packages, and potential build path/configuration problems.
