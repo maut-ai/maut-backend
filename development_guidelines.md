@@ -79,9 +79,14 @@ These guidelines are intended to help maintain a simple, understandable, and mai
 
 3.  **Implement Database Migrations with Flyway:**
     * **Flyway must be used** for managing and versioning all schema changes for the PostgreSQL database.
-    * Migration scripts must be clear and incremental.
-    * (Decisions pending on naming conventions for migration scripts and rules for changes within a single script).
-    * *LLM Interaction:* LLMs can help draft Flyway migration scripts if you precisely describe the required schema modifications.
+    * **Naming Convention:** Migration scripts **must** follow a timestamp-based versioning scheme: `V<YYYYMMDDHHMMSS>__Descriptive_Name.sql`. The timestamp represents the UTC date and time of creation. This convention ensures unique version numbers across all modules and prevents collisions.
+    * **Script for Creation:** To ensure consistency and ease of use, **always** use the `bin/create_migration.sh` script to generate new migration files.
+        * **Usage:** `bash bin/create_migration.sh <module_name|global> "Your Migration Description"`
+        * **Example (module-specific):** `bash bin/create_migration.sh clientapplication "Add enabled flag to client_applications table"`
+        * **Example (global):** `bash bin/create_migration.sh global "Update shared configuration table"`
+        * The script will automatically place the file in the correct directory (`src/main/resources/db/migration/` for global, or `src/main/resources/db/modules/<module_name>/` for module-specific).
+    * Migration scripts must contain clear, incremental, and idempotent SQL statements.
+    * *LLM Interaction:* LLMs can help draft the SQL content for Flyway migration scripts if you precisely describe the required schema modifications. The script name itself should be generated using `bin/create_migration.sh`.
 
 ### IV. LLM-Specific Collaboration Practices (and General Best Practices)
 
