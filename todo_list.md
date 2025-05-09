@@ -46,18 +46,25 @@
         - **`initiatePasskeyRegistration`**:
             - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
             - [x] Update unit tests in `AuthenticatorServiceImplTest.java` (Turnkey integration and lint errors resolved).
-            - [ ] Run updated tests for `initiatePasskeyRegistration`.
+            - [x] Run updated tests for `initiatePasskeyRegistration`.
         - **`completePasskeyRegistration`**:
-            - [ ] Integrate Turnkey client into `AuthenticatorServiceImpl`.
-            - [ ] Update unit tests in `AuthenticatorServiceImplTest.java`.
-            - [ ] Run updated tests for `completePasskeyRegistration`.
+            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
+            - [x] Update unit tests in `AuthenticatorServiceImplTest.java`.
+            - [x] Run updated tests for `completePasskeyRegistration`.
         - **`verifyPasskeyAssertion`**:
-            - [ ] Integrate Turnkey client into `AuthenticatorServiceImpl`.
-            - [ ] Update unit tests in `AuthenticatorServiceImplTest.java`.
-            - [ ] Run updated tests for `verifyPasskeyAssertion`.
+            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
+            - [x] Update unit tests in `AuthenticatorServiceImplTest.java`.
+            - [x] Run updated tests for `verifyPasskeyAssertion`.
     - [ ] General test file cleanup:
         - [ ] Clean up unused imports in `AuthenticatorServiceImplTest.java` once all test sections are active and tests pass.
-
-- [x] **Task 8:** Hello Module Enhancements
+- [ ] **Task 8:** Hello Module Enhancements
   - [x] Update `HelloMessageScheduler` cron schedule in `application-config.json` to run once per hour (`0 0 * * * ?`).
   - [x] Expand `RANDOM_GREETINGS` list in `HelloMessageService.java` with 40 additional greetings.
+- [x] **Task 9:** Create Flyway migration script to add `last_used_at` (TIMESTAMP WITH TIME ZONE, nullable) column to `user_authenticators` table.
+- [ ] **Task 10:** Write comprehensive unit tests in `AuthenticatorServiceImplTest.java` for `verifyPasskeyAssertion` (success, Turnkey failure, authenticator not found, wallet issues, Turnkey client exceptions, input validation).
+- [x] **Task 11:** Ensure `UserAuthenticator.lastUsedAt` is updated and saved after successful verification in `verifyPasskeyAssertion`.
+
+- [ ] **Task 12:** Implement Admin API for Client Application Management.
+  - [x] `POST /v1/admin/client-applications`: Create a new client application (given a name, returns ID and secret).
+    - Status: Implemented, currently unauthenticated.
+    - TODO: Add authentication/authorization to this endpoint.

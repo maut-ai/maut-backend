@@ -21,4 +21,11 @@ public interface ClientApplicationRepository extends JpaRepository<ClientApplica
      */
     Optional<ClientApplication> findByMautApiClientId(String mautApiClientId);
 
+    /**
+     * Finds a ClientApplication by its human-readable name.
+     *
+     * @param clientName The name of the client application.
+     * @return An {@link Optional} containing the found ClientApplication, or empty if not found.
+     */
+    Optional<ClientApplication> findByClientName(String clientName);
 }

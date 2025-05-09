@@ -55,6 +55,12 @@ public class ClientApplication {
     @Column(name = "origin")
     private List<String> allowedOrigins;
 
+    /**
+     * Flag indicating whether the client application is active and can be used.
+     */
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled = true; // Default to true for new applications
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
