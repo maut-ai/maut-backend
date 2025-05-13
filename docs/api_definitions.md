@@ -344,33 +344,103 @@ Base Path: `/v1/authenticator` (Note: These endpoints require a `MautUser` to be
 
 ---
 
-## Module: Client Application (Client User)
+## Module: Client Application
 
 ### Controller: `ClientApplicationController`
 Base Path: `/v1/clientapplication`
 
 ---
 
-#### 1. Get My Client Applications
-- **Name:** Get My Client Applications
+#### 1. Create Client Application
+- **Name:** Create Client Application
+- **HTTP Method:** `POST`
+- **URL:** `/v1/clientapplication`
+- **Description:** Creates a new client application for the authenticated user's team.
+- **Permissions Required:** Authenticated User.
+- **Example Request (`application/json`):
+  ```json
+  {
+    "name": "My Awesome App",
+    "allowedOrigins": ["https://example.com", "https://sub.example.com"]
+  }
+  ```
+- **Example Response (`201 CREATED`, `application/json`):
+  ```json
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "name": "My Awesome App",
+    "mautApiClientId": "MAUT_API_xxxxxxxxxxxxxxxxxxxx",
+    "allowedOrigins": ["https://example.com", "https://sub.example.com"],
+    "enabled": true,
+    "createdAt": "2023-10-27T10:00:00Z",
+    "updatedAt": "2023-10-27T10:00:00Z"
+  }
+  ```
+- **Error Responses:**
+  - `400 BAD_REQUEST`: If the request payload is invalid (e.g., missing `name`, invalid `allowedOrigins` format) or the user is not part of a team.
+  - `401 UNAUTHORIZED`: If the user is not authenticated.
+  - `500 INTERNAL_SERVER_ERROR`: For unexpected errors.
+
+---
+
+#### 2. List Client Applications
+- **Name:** List Client Applications
 - **HTTP Method:** `GET`
-- **URL:** `/v1/clientapplication/my`
-- **Description:** Retrieves a list of client applications associated with the authenticated client user.
-- **Permissions Required:** `CLIENT` authority (authenticated client user).
+- **URL:** `/v1/clientapplication`
+- **Description:** Lists client applications for the authenticated user's team.
+- **Permissions Required:** Authenticated User.
 - **Example Request:** (No request body)
 - **Example Response (`200 OK`, `application/json`):
   ```json
+  [
+    {
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "My First App",
+      "mautApiClientId": "MAUT_API_xxxxxxxxxxxxxxxxxxxx",
+      "enabled": true,
+      "createdAt": "2023-10-26T09:00:00Z"
+    },
+    {
+      "id": "b2c3d4e5-f6g7-8901-2345-678901bcdefg",
+      "name": "Another Test App",
+      "mautApiClientId": "MAUT_API_yyyyyyyyyyyyyyyyyyyy",
+      "enabled": false,
+      "createdAt": "2023-10-27T11:00:00Z"
+    }
+  ]
+  ```
+- **Error Responses:**
+  - `401 UNAUTHORIZED`: If the user is not authenticated.
+
+---
+
+#### 3. Get Client Application Details
+- **Name:** Get Client Application Details
+- **HTTP Method:** `GET`
+- **URL:** `/v1/clientapplication/{clientApplicationId}`
+- **Description:** Retrieves details of a specific client application to which the authenticated user's team has access.
+- **Path Variable:** `clientApplicationId` (UUID) - The ID of the client application.
+- **Permissions Required:** Authenticated User (must be associated with the team that owns the application).
+- **Example Request:** (No request body, `clientApplicationId` in path)
+  `GET /v1/clientapplication/a1b2c3d4-e5f6-7890-1234-567890abcdef`
+- **Example Response (`200 OK`, `application/json`):
+  ```json
   {
-    "applicationNames": [
-      "My First App",
-      "Another Test App"
-    ],
-    "message": "Successfully retrieved applications."
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "name": "Specific App Name",
+    "mautApiClientId": "MAUT_API_xxxxxxxxxxxxxxxxxxxx",
+    "allowedOrigins": ["https://specific.example.com"],
+    "enabled": true,
+    "createdAt": "2023-10-26T09:00:00Z",
+    "updatedAt": "2023-10-26T09:30:00Z"
   }
   ```
-  *Note: The structure of `applicationNames` might evolve to include more details per application.* 
 - **Error Responses:**
-  - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or does not have `CLIENT` authority.
+  - `401 UNAUTHORIZED`: If the user is not authenticated.
+  - `403 FORBIDDEN`: If the user's team does not have access to the specified client application.
+  - `404 NOT_FOUND`: If the client application with the given ID does not exist.
+
+---
 
 ## Module: Role (Admin)
 
@@ -404,6 +474,8 @@ Base Path: `/v1/adminrole`
   - `400 BAD_REQUEST`: If `name` is blank or fails validation (e.g., too short/long).
   - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or lacks `ADMIN_SUPER_ADMIN` authority.
   - `409 CONFLICT`: If a role with the same name already exists.
+
+---
 
 ## Module: Hello (Example/Test)
 

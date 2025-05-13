@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateClientApplicationRequest {
 
-    @NotBlank(message = "Client name is mandatory")
-    @Size(min = 3, max = 100, message = "Client name must be between 3 and 100 characters")
-    private String clientName;
+    @NotBlank(message = "Application name is mandatory")
+    @Size(min = 3, max = 100, message = "Application name must be between 3 and 100 characters")
+    private String name;
 }

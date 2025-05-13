@@ -1,5 +1,6 @@
 package com.maut.core.modules.clientapplication.model;
 
+import com.maut.core.modules.team.model.Team;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,7 +17,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "client_applications", indexes = {
-        @Index(name = "idx_client_applications_maut_api_client_id", columnList = "maut_api_client_id", unique = true)
+        @Index(name = "idx_client_applications_maut_api_client_id", columnList = "maut_api_client_id", unique = true),
+        @Index(name = "idx_client_applications_team_id", columnList = "team_id")
 })
 @Data
 @NoArgsConstructor
@@ -28,6 +30,13 @@ public class ClientApplication {
     private UUID id;
 
     /**
+     * The team that owns this client application.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", referencedColumnName = "id", nullable = false)
+    private Team team;
+
+    /**
      * Maut-issued unique identifier for the client API. This is public.
      */
     @Column(name = "maut_api_client_id", nullable = false, unique = true)
@@ -37,7 +46,7 @@ public class ClientApplication {
      * Human-readable name for the client application.
      */
     @Column(nullable = false)
-    private String clientName;
+    private String name;
 
     /**
      * Stores the plain text client secret used for JWT signing and validation.

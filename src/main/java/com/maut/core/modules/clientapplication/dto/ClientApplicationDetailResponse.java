@@ -6,16 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MyClientApplicationResponse {
+public class ClientApplicationDetailResponse {
     private UUID id;
     private String name;
     private String mautApiClientId;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private boolean enabled;
+    private List<String> allowedOrigins;
+    private UUID teamId;
 }
