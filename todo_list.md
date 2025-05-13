@@ -41,4 +41,14 @@
     - [x] Verify application starts and health check passes.
   - [x] 20.7: Update API Documentation (`docs/api_definitions.md` or OpenAPI spec).
 
-## Task 21: Client Application Admin Endpoints (`ClientApplicationAdminController`)
+- [ ] **Task 21: Client Application Admin Endpoints (`ClientApplicationAdminController`)**
+
+- [ ] **Task 22: Fix Lint Errors in SessionController and SessionService**
+  - [x] Fix lint errors in `SessionController.java` and `SessionService.java` by resolving missing imports.
+
+- [x] **Task 23: Enhance Create Client Application API**
+  - [x] Include `client_secret` in the response of `POST /v1/clientapplication`.
+  - [x] Ensure `client_secret` is *only* returned upon creation and not in other responses (e.g., Get Details).
+
+## General Tasks
+- [x] Update API documentation in `docs/api_definitions.md` for `ClientApplicationController` new endpoints (Create, List, Get Details) and ensure correct placement.

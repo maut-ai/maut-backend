@@ -17,6 +17,7 @@ public class ClientApplicationDetailResponse {
     private UUID id;
     private String name;
     private String mautApiClientId;
+    private String clientSecret;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean enabled;

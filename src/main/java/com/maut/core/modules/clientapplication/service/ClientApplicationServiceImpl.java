@@ -41,6 +41,7 @@ public class ClientApplicationServiceImpl implements ClientApplicationService {
         clientApplication.setName(request.getName());
         clientApplication.setTeam(team);
         clientApplication.setMautApiClientId("ma_id_" + UUID.randomUUID().toString().replace("-", ""));
+        clientApplication.setClientSecret(UUID.randomUUID().toString().replace("-", "")); // Added clientSecret
         clientApplication.setEnabled(true);
 
         ClientApplication savedApp = clientApplicationRepository.save(clientApplication);
