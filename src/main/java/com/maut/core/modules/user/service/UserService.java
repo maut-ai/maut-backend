@@ -26,6 +26,17 @@ public class UserService {
     }
 
     /**
+     * Checks if a user with the given email already exists.
+     *
+     * @param email The email to check.
+     * @return true if a user with the email exists, false otherwise.
+     */
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    /**
      * Saves a new user or updates an existing one.
      *
      * @param user The user entity to save.

@@ -1,7 +1,6 @@
 package com.maut.core.common.exception;
 
 import com.maut.core.common.exception.dto.ErrorResponseDto;
-import com.maut.core.modules.auth.exception.EmailAlreadyExistsException;
 import com.maut.core.modules.auth.exception.PasswordMismatchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +62,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleNoHandlerFoundException(
             NoHandlerFoundException ex, HttpServletRequest request) {
-        log.warn("No handler found for request URL: {} Method: {}", ex.getRequestURL(), ex.getHttpMethod()); // More specific log
+        log.warn("No handler found for request URL: {} Method: {}", ex.getRequestURL(), ex.getHttpMethod());
         
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.NOT_FOUND.value())
@@ -87,7 +86,6 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex, WebRequest request) {
         log.error("Validation exception: {}", ex.getMessage());
         
-        // Collect all field validation errors
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -95,37 +93,36 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         
-        // Format validation errors for the response message
         String errorMessage = errors.entrySet().stream()
                 .map(entry -> entry.getKey() + ": " + entry.getValue())
                 .collect(Collectors.joining(", "));
-        
+
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Validation failed: " + errorMessage)
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
-        
+
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**
-     * Handle HttpMessageNotReadableException - when the request body is missing or unreadable.
+     * Handle HttpMessageNotReadableException - when request body is missing or malformed.
      *
-     * @param ex      the exception
+     * @param ex the exception
      * @param request the web request
-     * @return a ResponseEntity with appropriate error message
+     * @return a ResponseEntity with appropriate 400 error message
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponseDto> handleHttpMessageNotReadableException(
+    public ResponseEntity<ErrorResponseDto> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, WebRequest request) {
-        log.warn("HTTP message not readable exception: {}", ex.getMessage());
+        log.warn("HTTP message not readable: {}", ex.getMessage());
 
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                .message("Request body is missing or malformed.") // General message
+                .message("Request body is missing or malformed.")
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
 
@@ -133,65 +130,75 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle PasswordMismatchException - when user registration passwords do not match.
+     * Handle PasswordMismatchException - when passwords do not match during registration or update.
      *
      * @param ex      the exception
      * @param request the web request
-     * @return a ResponseEntity with appropriate error message
+     * @return a ResponseEntity with a 400 Bad Request status
      */
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<ErrorResponseDto> handlePasswordMismatchException(
             PasswordMismatchException ex, WebRequest request) {
-        log.warn("Password mismatch exception: {}", ex.getMessage());
-
+        log.warn("Password mismatch: {}", ex.getMessage());
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
-
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**
-     * Handle EmailAlreadyExistsException - when trying to register with an email that already exists.
+     * Handle EmailAlreadyExistsException - when an attempt is made to register with an email that already exists.
      *
      * @param ex      the exception
      * @param request the web request
-     * @return a ResponseEntity with appropriate error message
+     * @return a ResponseEntity with a 409 Conflict status
      */
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDto> handleEmailAlreadyExistsException(
             EmailAlreadyExistsException ex, WebRequest request) {
-        log.warn("Email already exists exception: {}", ex.getMessage());
-
+        log.warn("Email already exists: {}", ex.getMessage());
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.CONFLICT.value())
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
-
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     /**
-     * Handle all other exceptions - general fallback.
+     * Handle TeamNameAlreadyExistsException - when an attempt is made to create a team with a name that already exists.
      *
-     * @param ex the exception
+     * @param ex      the exception
      * @param request the web request
-     * @return a ResponseEntity with generic error message
+     * @return a ResponseEntity with a 409 Conflict status
      */
+    @ExceptionHandler(TeamNameAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDto> handleTeamNameAlreadyExistsException(
+            TeamNameAlreadyExistsException ex, WebRequest request) {
+        log.warn("Team name already exists: {}", ex.getMessage());
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    // Generic fallback handler for any other unhandled exceptions
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDto> handleAllExceptions(
+    public ResponseEntity<ErrorResponseDto> handleAllUncaughtException(
             Exception ex, WebRequest request) {
-        log.error("Unexpected exception: ", ex);
+        log.error("An unexpected error occurred: {}", ex.getMessage(), ex); // Log stack trace for unexpected errors
         
         ErrorResponseDto errorResponse = ErrorResponseDto.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message("An unexpected error occurred: " + ex.getMessage())
+                .message("An unexpected error occurred. Please try again later.")
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
         

@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface TeamRepository extends JpaRepository<Team, UUID> {
     Optional<Team> findByName(String name);
+    boolean existsByName(String name);
 }

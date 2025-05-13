@@ -13,6 +13,16 @@ public class TeamService {
     private final TeamRepository teamRepository;
 
     /**
+     * Checks if a team with the given name already exists.
+     *
+     * @param teamName The name of the team to check.
+     * @return true if a team with the name exists, false otherwise.
+     */
+    public boolean teamExistsByName(String teamName) {
+        return teamRepository.existsByName(teamName);
+    }
+
+    /**
      * Creates and saves a new team.
      *
      * @param team The team object to create.
