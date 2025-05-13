@@ -173,6 +173,43 @@ Base Path: `/v1/auth`
   "User is not authorized for client login."
   ```
 
+---
+
+#### 4. Get Current User
+- **Name:** Get Current User
+- **HTTP Method:** `GET`
+- **URL:** `/v1/auth/me`
+- **Description:** Retrieves the details of the currently authenticated dashboard user (Admin or Client).
+- **Permissions Required:** Authenticated User (via JWT Bearer token).
+- **Example Request:** (No request body. Requires `Authorization: Bearer <JWT>` header)
+- **Example Response (`200 OK`, `application/json`):
+  ```json
+  {
+    "id": "c9a8b7e6-f5d4-c3b2-a109-876543210fed",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "userType": "CLIENT",
+    "team": {
+      "id": "t1a2b3c4-d5e6-f7a8-b9c0-a1b2c3d4e5f6",
+      "name": "Doe's Company",
+      // ... other team fields ...
+    },
+    "roles": [
+      {
+        "id": "r1o2l3e4-a5b6-c7d8-e9f0-g1h2i3j4k5l6",
+        "name": "ROLE_CLIENT_USER",
+        // ... other role fields ...
+      }
+    ],
+    "createdAt": "2023-01-15T10:30:00Z",
+    "updatedAt": "2023-01-16T11:00:00Z"
+  }
+  ```
+- **Error Responses:**
+  - `401 UNAUTHORIZED`: If the JWT is missing, invalid, or expired.
+  - `404 NOT_FOUND`: If the authenticated user (based on JWT claims) cannot be found in the database.
+
 ## Module: Authenticator (MautUser Passkeys)
 
 ### Controller: `AuthenticatorController`
@@ -335,8 +372,6 @@ Base Path: `/v1/clientapplication`
 - **Error Responses:**
   - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or does not have `CLIENT` authority.
 
----
-
 ## Module: Role (Admin)
 
 ### Controller: `AdminRoleController`
@@ -369,8 +404,6 @@ Base Path: `/v1/adminrole`
   - `400 BAD_REQUEST`: If `name` is blank or fails validation (e.g., too short/long).
   - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or lacks `ADMIN_SUPER_ADMIN` authority.
   - `409 CONFLICT`: If a role with the same name already exists.
-
----
 
 ## Module: Hello (Example/Test)
 
