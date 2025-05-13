@@ -7,14 +7,19 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Represents a user account for accessing Maut's dashboards (e.g., admin dashboard, client portal).
@@ -29,7 +34,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -79,4 +84,56 @@ public class User {
     @Builder.Default
     private Set<AdminRole> adminRoles = new HashSet<>();
 
+    @Transient // Mark as transient so JPA ignores it
+    private Collection<? extends GrantedAuthority> resolvedAuthorities;
+
+    // --- UserDetails Implementation ---
+
+    // Setter for UserDetailsServiceImpl to provide the resolved authorities
+    public void setResolvedAuthorities(Collection<? extends GrantedAuthority> authorities) {
+        this.resolvedAuthorities = authorities;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // This method will now return the authorities resolved and set by UserDetailsServiceImpl.
+        // If resolvedAuthorities is null or empty (e.g., if User object is obtained not via UserDetailsServiceImpl
+        // or if no authorities were applicable), provide a minimal default.
+        if (this.resolvedAuthorities == null || this.resolvedAuthorities.isEmpty()) {
+            // Consider logging a warning if this state is unexpected for an authenticated user.
+            // e.g., log.warn("User {} has no resolved authorities, falling back to default ROLE_USER_MINIMAL", this.email);
+            return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER_FALLBACK"));
+        }
+        return this.resolvedAuthorities;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.passwordHash; // Matches UserDetailsServiceImpl logic
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email; // Matches UserDetailsServiceImpl logic
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Default implementation
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // Default implementation
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Default implementation
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.isActive; // Uses existing isActive field
+    }
 }

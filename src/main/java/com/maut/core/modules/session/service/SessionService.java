@@ -1,13 +1,13 @@
 package com.maut.core.modules.session.service;
 
-import com.maut.core.modules.session.dto.SessionRequest; // Updated import
-import com.maut.core.modules.session.dto.SessionResponse; // Updated import
-import com.maut.core.modules.session.security.JwtUtil; // Updated import
-import com.maut.core.modules.clientapplication.model.ClientApplication; // Updated import
-import com.maut.core.modules.user.model.MautUser; // Updated import
-import com.maut.core.modules.clientapplication.repository.ClientApplicationRepository; // Updated import
-import com.maut.core.modules.user.repository.MautUserRepository; // Updated import
-import org.springframework.beans.factory.annotation.Autowired;
+import com.maut.core.modules.session.dto.SessionRequest;
+import com.maut.core.modules.session.dto.SessionResponse;
+import com.maut.core.modules.session.security.JwtUtil;
+import com.maut.core.modules.clientapplication.model.ClientApplication;
+import com.maut.core.modules.user.model.MautUser;
+import com.maut.core.modules.clientapplication.repository.ClientApplicationRepository;
+import com.maut.core.modules.user.repository.MautUserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,20 +15,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class SessionService {
 
     private final JwtUtil jwtUtil;
     private final ClientApplicationRepository clientApplicationRepository;
     private final MautUserRepository mautUserRepository;
-
-    @Autowired
-    public SessionService(JwtUtil jwtUtil,
-                          ClientApplicationRepository clientApplicationRepository,
-                          MautUserRepository mautUserRepository) {
-        this.jwtUtil = jwtUtil;
-        this.clientApplicationRepository = clientApplicationRepository;
-        this.mautUserRepository = mautUserRepository;
-    }
 
     @Transactional
     public SessionResponse processClientSession(SessionRequest sessionRequest) {

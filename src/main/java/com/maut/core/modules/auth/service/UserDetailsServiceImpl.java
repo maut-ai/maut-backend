@@ -51,20 +51,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toSet()));
         }
-        // Add a default role if no specific roles are found, or handle as an error/specific logic
+
         if (authorities.isEmpty()) {
-            // This could be a default role like "ROLE_USER" or an indication of a configuration issue
-            // For now, let's ensure every authenticated user has at least one role for security configurations.
-            // Depending on application requirements, this might need adjustment.
-            // For example, if ADMIN users might not have explicit AdminRole entries but are still admins,
-            // or CLIENT users might not be part of any team yet.
-            // Consider adding a log warning here if authorities are empty and it's unexpected.
-             authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // Default fallback role
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER")); // Default fallback role
         }
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPasswordHash(),
-                authorities);
+        user.setResolvedAuthorities(authorities); // Set the resolved authorities on the User entity
+
+        return user; // Return the User entity itself, which now implements UserDetails
     }
 }

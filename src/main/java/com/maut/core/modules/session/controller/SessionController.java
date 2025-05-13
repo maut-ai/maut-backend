@@ -1,8 +1,8 @@
 package com.maut.core.modules.session.controller;
 
-import com.maut.core.modules.session.dto.SessionRequest; // Updated import
-import com.maut.core.modules.session.dto.SessionResponse; // Updated import
-import com.maut.core.modules.session.service.SessionService; // Updated import
+import com.maut.core.modules.session.dto.SessionRequest; 
+import com.maut.core.modules.session.dto.SessionResponse; 
+import com.maut.core.modules.session.service.SessionService; 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/session") // This API path remains the same
+@RequestMapping("/v1/session") 
 public class SessionController {
 
     private final SessionService sessionService;

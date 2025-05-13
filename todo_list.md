@@ -43,12 +43,17 @@
 
 - [ ] **Task 21: Client Application Admin Endpoints (`ClientApplicationAdminController`)**
 
-- [ ] **Task 22: Fix Lint Errors in SessionController and SessionService**
+- [x] **Task 22: Fix Lint Errors in SessionController and SessionService**
   - [x] Fix lint errors in `SessionController.java` and `SessionService.java` by resolving missing imports.
 
 - [x] **Task 23: Enhance Create Client Application API**
   - [x] Include `client_secret` in the response of `POST /v1/clientapplication`.
   - [x] Ensure `client_secret` is *only* returned upon creation and not in other responses (e.g., Get Details).
+
+- [x] **Task 24: Fix NullPointerException in ClientApplicationController**
+  - [x] Modify `com.maut.core.modules.user.model.User` to implement `org.springframework.security.core.userdetails.UserDetails`.
+  - [x] Update `UserDetailsServiceImpl.loadUserByUsername` to return the `User` object directly.
+  - [x] Address persistent lint/build errors related to Session module imports.
 
 ## General Tasks
 - [x] Update API documentation in `docs/api_definitions.md` for `ClientApplicationController` new endpoints (Create, List, Get Details) and ensure correct placement.
