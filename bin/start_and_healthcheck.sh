@@ -52,6 +52,12 @@ cleanup() {
             fi
         fi    
     fi
+    echo "$LOG_PREFIX Dumping contents of mvn_output.log:"
+    if [ -f "mvn_output.log" ]; then
+        cat "mvn_output.log"
+    else
+        echo "$LOG_PREFIX mvn_output.log not found."
+    fi
     echo "$LOG_PREFIX Cleanup finished."
 }
 

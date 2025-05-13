@@ -14,5 +14,17 @@
       "enabled": true,
       "description": "Hello message functionality"
     }
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "maut_dev",
+    "username": "maut_user",
+    "password": "maut_password",
+    "schema": "public"
+  },
+  "jwt": {
+    "secretKey": "changeThisInProductionEnvironmentToAVeryLongAndSecureRandomString", 
+    "expirationTimeMs": 36000000 
   }
 }

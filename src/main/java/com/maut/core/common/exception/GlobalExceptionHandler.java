@@ -1,12 +1,15 @@
 package com.maut.core.common.exception;
 
 import com.maut.core.common.exception.dto.ErrorResponseDto;
+import com.maut.core.modules.auth.exception.EmailAlreadyExistsException;
+import com.maut.core.modules.auth.exception.PasswordMismatchException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
@@ -22,7 +25,7 @@ import java.util.stream.Collectors;
  * This handles common exceptions across the entire application, providing standardized
  * error responses regardless of which module generated the exception.
  */
-// @ControllerAdvice // Annotation removed to resolve bean conflict
+@ControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -104,6 +107,50 @@ public class GlobalExceptionHandler {
                 .build();
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handle PasswordMismatchException - when user registration passwords do not match.
+     *
+     * @param ex      the exception
+     * @param request the web request
+     * @return a ResponseEntity with appropriate error message
+     */
+    @ExceptionHandler(PasswordMismatchException.class)
+    public ResponseEntity<ErrorResponseDto> handlePasswordMismatchException(
+            PasswordMismatchException ex, WebRequest request) {
+        log.warn("Password mismatch exception: {}", ex.getMessage());
+
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handle EmailAlreadyExistsException - when trying to register with an email that already exists.
+     *
+     * @param ex      the exception
+     * @param request the web request
+     * @return a ResponseEntity with appropriate error message
+     */
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDto> handleEmailAlreadyExistsException(
+            EmailAlreadyExistsException ex, WebRequest request) {
+        log.warn("Email already exists exception: {}", ex.getMessage());
+
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     /**

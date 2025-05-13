@@ -1,0 +1,107 @@
+package com.maut.core.modules.auth.controller;
+
+import com.maut.core.modules.auth.dto.ClientRegistrationRequest;
+import com.maut.core.modules.auth.dto.LoginRequest;
+import com.maut.core.modules.auth.dto.LoginResponse;
+import com.maut.core.modules.auth.service.AuthService;
+import com.maut.core.modules.auth.service.JwtService;
+import com.maut.core.modules.user.model.User;
+import com.maut.core.modules.user.enums.UserType;
+import com.maut.core.modules.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.validation.Valid;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Slf4j
+public class AuthController {
+
+    private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+
+    @PostMapping("/client/register")
+    public ResponseEntity<?> registerClient(@Valid @RequestBody ClientRegistrationRequest request) {
+        log.info("Received client registration request for email: {}", request.getEmail());
+        try {
+            authService.registerClient(request);
+            log.info("Client registration successful for email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (Exception e) {
+            log.error("Client registration failed for email: {}: {}", request.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Registration failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> loginAdmin(@Valid @RequestBody LoginRequest loginRequest) {
+        log.info("Admin login attempt for email: {}", loginRequest.getEmail());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+            
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication")); 
+
+            if (user.getUserType() != UserType.ADMIN) {
+                log.warn("Admin login attempt by non-ADMIN user: {}", loginRequest.getEmail());
+                throw new BadCredentialsException("User is not authorized for admin login.");
+            }
+
+            String jwt = jwtService.generateToken(userDetails);
+            log.info("Admin login successful, token generated for email: {}", loginRequest.getEmail());
+            return ResponseEntity.ok(new LoginResponse(jwt));
+        } catch (BadCredentialsException e) {
+            log.warn("Admin login failed for email {}: {}", loginRequest.getEmail(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error during admin login for email {}: {}", loginRequest.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Login failed due to an internal error.");
+        }
+    }
+
+    @PostMapping("/client/login")
+    public ResponseEntity<?> loginClient(@Valid @RequestBody LoginRequest loginRequest) {
+        log.info("Client login attempt for email: {}", loginRequest.getEmail());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication")); 
+
+            if (user.getUserType() != UserType.CLIENT) {
+                log.warn("Client login attempt by non-CLIENT user: {}", loginRequest.getEmail());
+                throw new BadCredentialsException("User is not authorized for client login.");
+            }
+
+            String jwt = jwtService.generateToken(userDetails);
+            log.info("Client login successful, token generated for email: {}", loginRequest.getEmail());
+            return ResponseEntity.ok(new LoginResponse(jwt));
+        } catch (BadCredentialsException e) {
+            log.warn("Client login failed for email {}: {}", loginRequest.getEmail(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error during client login for email {}: {}", loginRequest.getEmail(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Login failed due to an internal error.");
+        }
+    }
+}

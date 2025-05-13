@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Represents a Maut user. A MautUser is unique within the Maut ecosystem and is identified by a mautUserId.
- * A MautUser is associated with a specific ClientApplication and has a clientSystemUserId which is the user's ID
- * within that client's system.
+ * Represents an end-user within a client application's ecosystem, managed by Maut.
+ * A MautUser is unique within Maut, identified by a `mautUserId` (UUID), and is associated with a specific
+ * `ClientApplication` via `client_application_id` and the user's identifier within that client's system (`clientSystemUserId`).
+ * MautUsers typically authenticate using mechanisms like passkeys and authorize API requests using a `mautSessionToken`.
+ * This is distinct from `User`, which represents accounts for accessing Maut's own dashboards.
  */
 @Entity
 @Table(name = "maut_users", indexes = {

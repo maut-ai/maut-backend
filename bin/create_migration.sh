@@ -5,6 +5,9 @@
 # Check for correct number of arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <module_name|global> \"<Migration Description>\""
+    echo "  <module_name>: The name of the specific module (e.g., 'clientapplication', 'user')."
+    echo "  global: Use the keyword 'global' for non-module-specific migrations (creates in 'db/migration/')."
+    echo "          Do NOT use 'global' as an actual module name for 'db/modules/global/'."
     echo "Example (module): $0 clientapplication \"Add new feature for clients\""
     echo "Example (global): $0 global \"Update shared lookup table\""
     exit 1

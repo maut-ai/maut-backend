@@ -1,77 +1,84 @@
-# Maut Backend To-Do List
+# Maut Backend To-Do List - Authentication Implementation
 
-## Phase 1: Core Backend API & Data Model Implementation (v0)
+## Phase 1: Backend Core Authentication & Authorization
 
-- [x] **Task 1:** Define overall project structure and create `com.maut.core.modules.projectspecification.v0_architecture_proposal.md`.
-  - Status: Done
-  - Deliverable: `com.maut.core.modules.projectspecification.v0_architecture_proposal.md`
-- [x] **Task 2:** Implement Maut Platform Backend Data Models (Section 3 of `com.maut.core.modules.projectspecification.v0_project_spec.md`).
-  - [x] ClientApplication Model (`com.maut.core.modules.clientapplication.model.ClientApplication`)
-  - [x] MautUser Model (`com.maut.core.modules.user.model.MautUser`)
-  - [x] UserWallet Model (`com.maut.core.modules.wallet.model.UserWallet`)
-  - [x] UserAuthenticator Model (`com.maut.core.modules.authenticator.model.UserAuthenticator`)
-- [ ] **Task 3:** Implement Maut Platform Backend API Definitions (Section 2 of `com.maut.core.modules.projectspecification.v0_project_spec.md`).
-  - [x] POST /v1/session
-  - [x] POST /v1/wallet/enroll (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] POST /v1/authenticators/initiate-passkey-registration (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] POST /v1/authenticators/complete-passkey-registration (Core structure implemented; Turnkey/Auth placeholders; DB migration for new fields created)
-  - [x] POST /v1/policies/apply-signing-policy (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] GET /v1/wallet/details (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] POST /v1/transactions/initiate-signing (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] POST /v1/activities/:activityId/submit-user-approval (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] GET /v1/activities/:activityId/status (Core structure implemented; Turnkey/Auth placeholders)
-  - [x] GET /v1/activities (placeholder logic implemented)
-  - [x] GET /v1/passkeys (placeholder logic implemented)
-  - [x] DELETE /v1/passkeys/:passkeyId (placeholder logic implemented)
-- [x] **Task 4:** Set up initial database migrations for the new models using Flyway. (Core tables created: `client_applications`, `maut_users`, `user_authenticators`, `user_wallets`)
-- [x] **Task 5:** Implement JSON 404 error response
-  - [x] Create `ApiErrorResponse.java` DTO
-  - [x] Implement `GlobalExceptionHandler.java` with `NoHandlerFoundException` handler
-  - [x] Update `application.yml` to enable `NoHandlerFoundException` and configure resource mappings
-- [ ] **Task 6:** Write unit and integration tests for all new services and controllers.
-    - [x] Unit tests for `AuthenticatorController.java` (Initial structure and basic tests created)
-    - [ ] Unit tests for `AuthenticatorServiceImpl.java`
-        - [x] `initiatePasskeyRegistration` (initial placeholder tests)  // Refers to pre-Turnkey tests
-        - [x] `listPasskeys` (comprehensive tests)
-        - [x] `deletePasskey` (tests for current logic)
-        - [x] `completePasskeyRegistration` (comprehensive tests for current logic, pre-Turnkey)
-        - [x] `verifyPasskeyAssertion` (Placeholder implementation in AuthenticatorServiceImpl done)
-        - [x] `findAndValidateUserAuthenticator` (Method implemented in AuthenticatorServiceImpl)
-    - [x] Unit tests for `ActivityController.java` (Completed)
-- [ ] **Task 7:** Begin Turnkey API client integration.
-    - [x] Define Turnkey client interface and DTOs. (Completed)
-    - [x] Implement Turnkey client methods for passkey registration (initiate/complete). (Completed)
-    - [x] Implement Turnkey client method for passkey assertion verification. (Completed)
-    - [ ] `AuthenticatorServiceImpl` Turnkey Integration & Testing:
-        - **`initiatePasskeyRegistration`**:
-            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
-            - [x] Update unit tests in `AuthenticatorServiceImplTest.java` (Turnkey integration and lint errors resolved).
-            - [x] Run updated tests for `initiatePasskeyRegistration`.
-        - **`completePasskeyRegistration`**:
-            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
-            - [x] Update unit tests in `AuthenticatorServiceImplTest.java`.
-            - [x] Run updated tests for `completePasskeyRegistration`.
-        - **`verifyPasskeyAssertion`**:
-            - [x] Integrate Turnkey client into `AuthenticatorServiceImpl`.
-            - [x] Update unit tests in `AuthenticatorServiceImplTest.java`.
-            - [x] Run updated tests for `verifyPasskeyAssertion`.
-    - [ ] General test file cleanup:
-        - [ ] Clean up unused imports in `AuthenticatorServiceImplTest.java` once all test sections are active and tests pass.
-- [ ] **Task 8:** Hello Module Enhancements
-  - [x] Update `HelloMessageScheduler` cron schedule in `application-config.json` to run once per hour (`0 0 * * * ?`).
-  - [x] Expand `RANDOM_GREETINGS` list in `HelloMessageService.java` with 40 additional greetings.
-- [x] **Task 9:** Create Flyway migration script to add `last_used_at` (TIMESTAMP WITH TIME ZONE, nullable) column to `user_authenticators` table.
-- [ ] **Task 10:** Write comprehensive unit tests in `AuthenticatorServiceImplTest.java` for `verifyPasskeyAssertion` (success, Turnkey failure, authenticator not found, wallet issues, Turnkey client exceptions, input validation).
-- [x] **Task 11:** Ensure `UserAuthenticator.lastUsedAt` is updated and saved after successful verification in `verifyPasskeyAssertion`.
+- [x] **Task 1: Project Setup Review & Dependency Management**
+  - [x] 1.1: Verify required dependencies are in `pom.xml` (Spring Web, Security, Data JPA, Lombok, Validation, JWT library - e.g., `io.jsonwebtoken:jjwt-api`, `jjwt-impl`, `jjwt-jackson`). Add if missing.
+  - [x] 1.2: Confirm database connection details are configured (likely in `application-config.json` or `application.yml`).
+  - [x] 1.3: Review existing project structure for alignment with plan (controllers, services, repositories, entities, DTOs, config).
 
-- [ ] **Task 12:** Implement Admin API for Client Application Management.
-  - [x] `POST /v1/admin/client-applications`: Create a new client application (given a name, returns ID and secret).
-    - Status: Implemented, currently unauthenticated.
-    - TODO: Add authentication/authorization to this endpoint.
+- [x] **Task 2: Data Model Implementation**
+  - [x] 2.1: Create `User` entity (`com.maut.core.modules.user.model.User`) with fields: `id`, `userType` (Enum: ADMIN, CLIENT), `firstName`, `lastName`, `email` (unique), `passwordHash`, `isActive`, `createdAt`, `updatedAt`.
+    - *Note: Investigate/create a common `BaseEntity` for `id`, `createdAt`, `updatedAt` later.* 
+  - [x] 2.2: Create `AdminRole` entity (`com.maut.core.modules.role.model.AdminRole`) with fields: `id`, `name` (e.g., 'ROLE_ADMIN', 'ROLE_SUPPORT').
+  - [x] 2.3: Create `UserAdminRole` join entity/relation (`com.maut.core.modules.user.model.User`) for ManyToMany between `User` (ADMIN type) and `AdminRole`.
+  - [x] 2.4: Create `Team` entity (`com.maut.core.modules.team.model.Team`) with fields: `id`, `name` (unique), `ownerUserId` (FK to User.id), `createdAt`, `updatedAt`.
+  - [x] 2.5: Create `TeamRole` entity (`com.maut.core.modules.role.model.TeamRole`) with fields: `id`, `name` (e.g., 'ROLE_OWNER', 'ROLE_MEMBER', 'ROLE_READ_ONLY').
+  - [x] 2.6: Create `TeamMembership` entity (`com.maut.core.modules.team.model.TeamMembership`) with fields: `id`, `user` (FK to User.id), `team` (FK to Team.id), `teamRole` (FK to TeamRole.id), `joinedAt`. Ensure composite unique constraint on (user, team).
+  - [x] 2.7: Create JPA Repositories for all new entities (`UserRepository`, `AdminRoleRepository`, `TeamRepository`, `TeamRoleRepository`, `TeamMembershipRepository`). Extend `JpaRepository`. 
+  - [x] 2.8: Create Flyway migration script (`db/migration/V{timestamp}__CreateAuthTables.sql`) to create tables for `User`, `AdminRole`, `user_admin_roles` (join table), `Team`, `TeamRole`, `TeamMembership`. Add constraints and indexes.
+  - [x] 2.9: Create Flyway migration script (`db/migration/V{timestamp}__SeedRoles.sql`) to insert initial `AdminRole` and `TeamRole` records.
+  - [x] 2.10: Create Flyway migration script (`db/migration/V{timestamp}__SeedRoles.sql`) to insert initial `AdminRole` and `TeamRole` records.
+  - [x] 2.11: Resolve all schema validation errors by ensuring correct entity-to-column mappings.
 
-- [x] **Task 13:** Resolve JWT client secret handling and related startup failures.
-  - Status: Done (Ensured `ClientApplication` uses plain text `clientSecret`, fixed Flyway migration, application starts successfully).
+- [x] **Task 3: Core Service Implementation**
+  - [x] 3.1: Create `UserService` (`com.maut.core.modules.user.service.UserService`) with `@Service` annotation.
+  - [x] 3.2: Implement `UserService.findUserByEmail(String email)` using `UserRepository`.
+  - [x] 3.3: Implement `UserService.createUser(User user)` (handles saving).
+  - [x] 3.4: Create `TeamService` (`com.maut.core.modules.team.service.TeamService`) with `@Service`.
+  - [x] 3.5: Implement `TeamService.createTeam(Team team)`.
+  - [x] 3.6: Create `TeamMembershipService` (`com.maut.core.modules.team.service.TeamMembershipService`) with `@Service`.
+  - [x] 3.7: Implement `TeamMembershipService.addTeamMember(User user, Team team, TeamRole role)`.
+  - [x] 3.8: Configure `BCryptPasswordEncoder` bean in a `SecurityConfig` or dedicated config class.
 
-- [ ] **Task 14:** Address widespread unresolved import and type lint errors across the codebase.
-  - Status: Pending
-  - Notes: Investigate issues with DTOs, common packages, and potential build path/configuration problems.
+- [x] **Task 4: Client Registration API**
+  - [x] 4.1: Create `AuthController` (`com.maut.core.modules.auth.controller.AuthController`) with `@RestController` and base path `/api/auth`.
+  - [x] 4.2: Create `ClientRegistrationRequest` DTO (`com.maut.core.modules.auth.dto.ClientRegistrationRequest`) with validation annotations (`@NotBlank`, `@Email`, `@Size`, custom password complexity/match if needed). Include fields: `firstName`, `lastName`, `email`, `password`, `confirmPassword`, `teamName`.
+  - [x] 4.3: Implement `POST /client/register` endpoint in `AuthController`. Inject services and `PasswordEncoder`.
+  - [x] 4.4: Create a dedicated `AuthService` (`com.maut.core.modules.auth.service.AuthService`) to hold registration logic. Mark registration method with `@Transactional`.
+  - [x] 4.5: Implement registration logic in `AuthService`: validate input (check email uniqueness, password match), hash password, create `User` (type CLIENT), create `Team` (set owner), find 'ROLE_OWNER' `TeamRole`, create `TeamMembership`.
+  - [x] 4.6: Handle exceptions (e.g., `DataIntegrityViolationException` for duplicate email/team name) and return appropriate HTTP status codes (201, 400, 409).
+
+- [x] **Task 5: Initial Health Check and Linting**
+  - [x] 5.1: Run `bin/start_and_healthcheck.sh` to ensure the application starts, passes linting, and basic health checks.
+
+- [x] **Task 6: JWT Service Implementation**
+  - [x] 6.1: Create `JwtService` (`com.maut.core.modules.auth.service.JwtService`) with `@Service`.
+  - [x] 6.2: Add JWT library dependency (if not done in 1.1).
+  - [x] 6.3: Implement `JwtService.generateToken(UserDetails userDetails)`: create claims (subject=email, roles), set issued/expiration dates, sign with secret key.
+  - [x] 6.4: Implement `JwtService.validateToken(String token)`: parse token, verify signature and expiration.
+  - [x] 6.5: Implement `JwtService.extractUsername(String token)` (or `extractEmail`).
+  - [x] 6.6: Implement `JwtService.extractClaims(String token)`.
+  - [x] 6.7: Configure JWT secret key and expiration time securely via application properties/environment variables. Read them in `JwtService`.
+
+- [x] **Task 7: Login API & Spring Security Core**
+  - [x] 7.1: Create `LoginRequest` DTO (`com.maut.core.modules.auth.dto.LoginRequest`) with `email`, `password`.
+  - [x] 7.2: Create `LoginResponse` DTO (`com.maut.core.modules.auth.dto.LoginResponse`) with `accessToken`.
+  - [x] 7.3: Create `UserDetailsServiceImpl` (`com.maut.core.modules.auth.service.UserDetailsServiceImpl`) implementing `UserDetailsService`.
+  - [x] 7.4: Implement `UserDetailsServiceImpl.loadUserByUsername(String email)`: Use `UserRepository` to find `User`. Fetch `AdminRoles` or `TeamMemberships` based on `userType`. Convert roles to `GrantedAuthority` objects (e.g., `SimpleGrantedAuthority`). Throw `UsernameNotFoundException` if user not found or inactive.
+  - [x] 7.5: Define `AuthenticationManager` bean in `SecurityConfig` using `authenticationConfiguration.getAuthenticationManager()`.
+  - [x] 7.6: Implement `POST /admin/login` endpoint in `AuthController`.
+  - [x] 7.7: Implement `POST /client/login` endpoint in `AuthController`.
+  - [x] 7.8: In login endpoints: Use `AuthenticationManager.authenticate()`. On success, get `UserDetails`, generate JWT using `JwtService`, return `LoginResponse`. Handle `BadCredentialsException` (return 401).
+
+- [x] **Task 8: Spring Security Filter Chain Configuration**
+  - [x] 8.1: Create `SecurityConfig` (`com.maut.core.config.SecurityConfig`) with `@Configuration`, `@EnableWebSecurity`.
+  - [x] 8.2: Define `SecurityFilterChain` bean in `SecurityConfig`.
+  - [x] 8.3: In `SecurityFilterChain`: Disable CSRF (`.csrf().disable()`).
+  - [x] 8.4: Set session management to stateless (`.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)`).
+  - [x] 8.5: Configure public endpoints: `/api/auth/**`, `GET /api/status`, `GET /api/hello` should be `permitAll()`. All other requests `authenticated()`.
+  - [x] 8.6: Integrate `JwtAuthFilter` before `UsernamePasswordAuthenticationFilter` (`.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)`).
+  - [x] 8.7: Define `AuthenticationProvider` bean: Use `DaoAuthenticationProvider`, set `UserDetailsService`, `PasswordEncoder`.
+
+- [x] **Task 9: Basic Authorization Implementation** 
+  - [x] 9.1: In `SecurityConfig`, add `@EnableGlobalMethodSecurity(prePostEnabled = true)` to enable method-level security.
+  - [x] 9.2: Protect `POST /api/v1/admin/roles` endpoint in `AdminRoleController` to require `ADMIN_SUPER_ADMIN` authority using `@PreAuthorize("hasAuthority('ADMIN_SUPER_ADMIN')")`.
+    - <!-- Note: AdminRoleController and POST /admin/roles endpoint do not exist yet. This task will be addressed when the controller is created. --> <!-- Controller created, path is /api/v1/admin/roles -->
+  - [x] 9.3: Protect `GET /api/v1/client-applications/my` endpoint in `ClientApplicationController` to require `CLIENT` authority using `@PreAuthorize("hasAuthority('CLIENT')")`.
+    - <!-- Note: ClientApplicationController and GET /client-applications/my endpoint exist and path is /api/v1/client-applications/my -->
+
+- [x] **Task 10: Database Seeding for Test Users and Roles**
+
+- [x] **Task 11: Document API Endpoints**
+  - [x] 11.1: Gather all controller definitions and their DTOs.
+  - [x] 11.2: Create `docs/api_definitions.md` with details for each endpoint (name, method, URL, description, example request/response).

@@ -5,12 +5,11 @@ import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationRespon
 import com.maut.core.modules.authenticator.dto.InitiatePasskeyRegistrationResponse;
 import com.maut.core.modules.authenticator.dto.ListPasskeysResponse;
 import com.maut.core.modules.authenticator.service.AuthenticatorService;
-import com.maut.core.modules.user.model.MautUser;
+import com.maut.core.modules.user.model.MautUser; 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.core.annotation.AuthenticationPrincipal; // For Spring Security
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/authenticators")
+@RequestMapping("/api/v1/maut-user/authenticators") 
 @RequiredArgsConstructor
 @Slf4j
 public class AuthenticatorController {
@@ -32,10 +31,11 @@ public class AuthenticatorController {
 
     @PostMapping("/initiate-passkey-registration")
     public ResponseEntity<InitiatePasskeyRegistrationResponse> initiatePasskeyRegistration(
-        // @AuthenticationPrincipal MautUser mautUser // Placeholder for authenticated MautUser
+        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
+        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken */
     ) {
-        // TODO: Replace null with actual authenticated MautUser from Spring Security context
-        MautUser mautUser = null; // Placeholder
+        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
+        // Example: MautUser mautUser = mautSessionService.validateAndGetMautUser(mautSessionToken);
 
         InitiatePasskeyRegistrationResponse response = authenticatorService.initiatePasskeyRegistration(mautUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -43,46 +43,38 @@ public class AuthenticatorController {
 
     @PostMapping("/complete-passkey-registration")
     public ResponseEntity<CompletePasskeyRegistrationResponse> completePasskeyRegistration(
-        // @AuthenticationPrincipal MautUser mautUser, // Placeholder for authenticated MautUser
+        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
+        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
         @Valid @RequestBody CompletePasskeyRegistrationRequest request
     ) {
-        // TODO: Replace null with actual authenticated MautUser from Spring Security context
-        MautUser mautUser = null; // Placeholder
+        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
 
         CompletePasskeyRegistrationResponse response = authenticatorService.completePasskeyRegistration(mautUser, request);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("") // Maps to /v1/passkeys
+    @GetMapping("")
     public ResponseEntity<ListPasskeysResponse> listPasskeys(
-        // @AuthenticationPrincipal MautUser mautUser, // Placeholder for Spring Security
+        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
+        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
         @RequestParam(defaultValue = "10") int limit,
         @RequestParam(defaultValue = "0") int offset
     ) {
-        // TODO: Replace null with actual authenticated MautUser from Spring Security context
-        MautUser mautUser = null; // Placeholder
-        if (mautUser == null) {
-            // This endpoint requires an authenticated user.
-            // For now, service layer will handle null user if it's an issue.
-            log.warn("Accessing /v1/passkeys without an authenticated user (using placeholder).");
-        }
+        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
+        
         ListPasskeysResponse response = authenticatorService.listPasskeys(mautUser, limit, offset);
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{passkeyId}") // Maps to /v1/passkeys/{passkeyId}
+    @DeleteMapping("/{passkeyId}")
     public ResponseEntity<Void> deletePasskey(
-        // @AuthenticationPrincipal MautUser mautUser, // Placeholder for Spring Security
+        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
+        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
         @PathVariable String passkeyId
     ) {
-        // TODO: Replace null with actual authenticated MautUser from Spring Security context
-        MautUser mautUser = null; // Placeholder
-        if (mautUser == null) {
-            log.warn("Attempting to delete passkey {} without an authenticated user (using placeholder).", passkeyId);
-            // Depending on security policy, this might be an error or handled by the service
-        }
+        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
 
         authenticatorService.deletePasskey(mautUser, passkeyId);
-        return ResponseEntity.noContent().build(); // HTTP 204 No Content
+        return ResponseEntity.noContent().build();
     }
 }
