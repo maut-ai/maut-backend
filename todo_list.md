@@ -82,3 +82,26 @@
 - [x] **Task 11: Document API Endpoints**
   - [x] 11.1: Gather all controller definitions and their DTOs.
   - [x] 11.2: Create `docs/api_definitions.md` with details for each endpoint (name, method, URL, description, example request/response).
+
+- [ ] **Task 12: CORS Configuration for Frontend-Backend Communication**
+  - [x] 12.1: Configure backend to allow requests from `https://dashboard.maut.ai` by updating `SecurityConfig.java`.
+  - [ ] 12.2: (Optional) Add any local development frontend URLs to CORS allowed origins.
+  - [ ] 12.3: Test frontend to backend communication.
+
+- [ ] **Task 13: Refine Authentication/Authorization Error Handling**
+  - [x] 13.1: Create `CustomAuthenticationEntryPoint` to ensure 401 JSON responses for authentication failures.
+  - [x] 13.2: Update `SecurityConfig` to use `CustomAuthenticationEntryPoint` for authentication failures and `CustomAccessDeniedHandler` for authorization failures.
+  - [ ] 13.3: Verify 401 (unauthenticated), 403 (unauthorized), and 404 (not found) responses are correct and have JSON bodies.
+  - [x] 13.4: Add `HttpMessageNotReadableException` handler to `GlobalExceptionHandler` for 400 on missing/malformed request body.
+
+- [x] **Task 14: Standardize API Path Naming Convention**
+  - [x] 14.1: Define API path convention as `/v1/MODULE/action` and store as memory.
+  - [x] 14.2: Update `AuthenticatorController` RequestMapping to `/v1/authenticator`.
+  - [x] 14.3: Update `ClientApplicationController` RequestMapping to `/v1/clientapplication`.
+  - [x] 14.4: Update `AdminRoleController` RequestMapping to `/v1/adminrole`.
+  - [x] 14.5: Confirm `AuthController` RequestMapping is `/v1/auth`.
+  - [x] 14.6: Update `SecurityConfig` to reflect new `/v1/auth/**` public path.
+  - [x] 14.7: Update `docs/api_definitions.md` with new base paths and endpoint URLs for `AuthController`, `AuthenticatorController`, `ClientApplicationController`, `AdminRoleController`.
+  - [x] 14.8: Run `bin/start_and_healthcheck.sh` and fix any errors.
+
+- [ ] **Task 15: Resolve "Port 8080 already in use" error**

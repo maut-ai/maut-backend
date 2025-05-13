@@ -5,14 +5,14 @@ This document outlines the available API endpoints for the Maut backend system.
 ## Module: Activity
 
 ### Controller: `ActivityController`
-Base Path: `/v1/activities` (Note: This controller currently references `MautUser` which, based on recent clarifications, should be resolved via a MautUser-specific session, not Spring Security `AuthenticationPrincipal`.)
+Base Path: `/v1/activity` (Note: This controller currently references `MautUser` which, based on recent clarifications, should be resolved via a MautUser-specific session, not Spring Security `AuthenticationPrincipal`.)
 
 ---
 
 #### 1. Submit User Approval for an Activity
 - **Name:** Submit User Approval
 - **HTTP Method:** `POST`
-- **URL:** `/v1/activities/{activityId}/submit-user-approval`
+- **URL:** `/v1/activity/submit-user-approval`
 - **Description:** Submits a user's approval (e.g., a signed challenge) for a specific activity.
 - **Example Request (`application/json`):
   ```json
@@ -32,7 +32,7 @@ Base Path: `/v1/activities` (Note: This controller currently references `MautUse
 #### 2. Get Activity Status
 - **Name:** Get Activity Status
 - **HTTP Method:** `GET`
-- **URL:** `/v1/activities/{activityId}/status`
+- **URL:** `/v1/activity/status`
 - **Description:** Retrieves the current status and details of a specific activity.
 - **Example Request:** (No request body, `activityId` in path)
 - **Example Response (`application/json`):
@@ -51,14 +51,14 @@ Base Path: `/v1/activities` (Note: This controller currently references `MautUse
 #### 3. List Activities
 - **Name:** List Activities
 - **HTTP Method:** `GET`
-- **URL:** `/v1/activities`
+- **URL:** `/v1/activity`
 - **Description:** Lists activities for the authenticated `MautUser`, with optional filtering and pagination.
 - **Query Parameters:**
     - `limit` (int, optional, default: 10): Number of activities to return.
     - `offset` (int, optional, default: 0): Offset for pagination.
     - `status` (String, optional): Filter activities by status (e.g., "PENDING_APPROVAL", "COMPLETED").
 - **Example Request:** (No request body, parameters in URL query)
-  `/v1/activities?limit=5&status=PENDING_APPROVAL`
+  `/v1/activity?limit=5&status=PENDING_APPROVAL`
 - **Example Response (`application/json`):
   ```json
   {
@@ -89,14 +89,14 @@ Base Path: `/v1/activities` (Note: This controller currently references `MautUse
 ## Module: Auth (Dashboard User Authentication)
 
 ### Controller: `AuthController`
-Base Path: `/api/auth`
+Base Path: `/v1/auth`
 
 ---
 
 #### 1. Register Client User
 - **Name:** Register Client User
 - **HTTP Method:** `POST`
-- **URL:** `/api/auth/client/register`
+- **URL:** `/v1/auth/client/register`
 - **Description:** Registers a new client user (for dashboard access).
 - **Example Request (`application/json`):
   ```json
@@ -122,7 +122,7 @@ Base Path: `/api/auth`
 #### 2. Admin Login
 - **Name:** Admin Login
 - **HTTP Method:** `POST`
-- **URL:** `/api/auth/admin/login`
+- **URL:** `/v1/auth/admin/login`
 - **Description:** Authenticates an admin user (for dashboard access) and returns a JWT.
 - **Example Request (`application/json`):
   ```json
@@ -148,7 +148,7 @@ Base Path: `/api/auth`
 #### 3. Client Login
 - **Name:** Client Login
 - **HTTP Method:** `POST`
-- **URL:** `/api/auth/client/login`
+- **URL:** `/v1/auth/client/login`
 - **Description:** Authenticates a client user (for dashboard access) and returns a JWT.
 - **Example Request (`application/json`):
   ```json
@@ -172,14 +172,14 @@ Base Path: `/api/auth`
 ## Module: Authenticator (MautUser Passkeys)
 
 ### Controller: `AuthenticatorController`
-Base Path: `/api/v1/maut-user/authenticators` (Note: These endpoints require a `MautUser` to be identified, likely via a `mautSessionToken` header, which is not yet fully implemented in the controller methods shown.)
+Base Path: `/v1/authenticator` (Note: These endpoints require a `MautUser` to be identified, likely via a `mautSessionToken` header, which is not yet fully implemented in the controller methods shown.)
 
 ---
 
 #### 1. Initiate Passkey Registration
 - **Name:** Initiate Passkey Registration
 - **HTTP Method:** `POST`
-- **URL:** `/api/v1/maut-user/authenticators/initiate-passkey-registration`
+- **URL:** `/v1/authenticator/initiate-passkey-registration`
 - **Description:** Initiates the passkey registration process for the authenticated `MautUser`.
 - **Example Request:** (No request body, assumes `MautUser` identified from session/token)
 - **Example Response (`application/json`):
@@ -218,7 +218,7 @@ Base Path: `/api/v1/maut-user/authenticators` (Note: These endpoints require a `
 #### 2. Complete Passkey Registration
 - **Name:** Complete Passkey Registration
 - **HTTP Method:** `POST`
-- **URL:** `/api/v1/maut-user/authenticators/complete-passkey-registration`
+- **URL:** `/v1/authenticator/complete-passkey-registration`
 - **Description:** Completes the passkey registration process using the attestation data from the client.
 - **Example Request (`application/json`):
   ```json
@@ -254,13 +254,13 @@ Base Path: `/api/v1/maut-user/authenticators` (Note: These endpoints require a `
 #### 3. List Passkeys
 - **Name:** List Passkeys
 - **HTTP Method:** `GET`
-- **URL:** `/api/v1/maut-user/authenticators`
+- **URL:** `/v1/authenticator`
 - **Description:** Lists all registered passkeys for the authenticated `MautUser`.
 - **Query Parameters:**
     - `limit` (int, optional, default: 10): Number of passkeys to return.
     - `offset` (int, optional, default: 0): Offset for pagination.
 - **Example Request:** (No request body, parameters in URL query)
-  `/api/v1/maut-user/authenticators?limit=5`
+  `/v1/authenticator?limit=5`
 - **Example Response (`application/json`):
   ```json
   {
@@ -295,7 +295,7 @@ Base Path: `/api/v1/maut-user/authenticators` (Note: These endpoints require a `
 #### 4. Delete Passkey
 - **Name:** Delete Passkey
 - **HTTP Method:** `DELETE`
-- **URL:** `/api/v1/maut-user/authenticators/{passkeyId}`
+- **URL:** `/v1/authenticator/{passkeyId}`
 - **Description:** Deletes a specific passkey for the authenticated `MautUser`.
 - **Example Request:** (No request body, `passkeyId` in path)
 - **Example Response:** 
@@ -303,60 +303,17 @@ Base Path: `/api/v1/maut-user/authenticators` (Note: These endpoints require a `
 
 ---
 
-## Module: Client Application (Admin)
-
-### Controller: `ClientApplicationAdminController`
-Base Path: `/v1/admin/client-applications`
-
----
-
-#### 1. Create Client Application
-- **Name:** Create Client Application
-- **HTTP Method:** `POST`
-- **URL:** `/v1/admin/client-applications`
-- **Description:** Allows an admin to create a new client application. This will generate a Maut API Client ID and a client secret for the application to use.
-- **Permissions Required:** Admin user.
-- **Example Request (`application/json`):
-  ```json
-  {
-    "clientName": "My New Awesome App"
-  }
-  ```
-- **Example Response (`201 CREATED`, `application/json`):
-  ```json
-  {
-    "mautApiClientId": "_generated_api_client_id_uuid_",
-    "clientName": "My New Awesome App",
-    "clientSecret": "_plaintext_client_secret_value_" 
-  }
-  ```
-  *Note: The `clientSecret` is returned only on creation and should be stored securely by the client.* 
-- **Error Responses:**
-  - `400 BAD_REQUEST`: If the request is invalid (e.g., missing `clientName`, name too short/long).
-    ```json
-    {
-      "timestamp": "2023-10-27T10:30:00.123Z",
-      "status": 400,
-      "error": "Bad Request",
-      "message": "Client name is mandatory", // or other specific validation message
-      "path": "/v1/admin/client-applications"
-    }
-    ```
-  - `500 INTERNAL_SERVER_ERROR`: For unexpected server errors.
-
----
-
 ## Module: Client Application (Client User)
 
 ### Controller: `ClientApplicationController`
-Base Path: `/api/v1/client-applications`
+Base Path: `/v1/clientapplication`
 
 ---
 
 #### 1. Get My Client Applications
 - **Name:** Get My Client Applications
 - **HTTP Method:** `GET`
-- **URL:** `/api/v1/client-applications/my`
+- **URL:** `/v1/clientapplication/my`
 - **Description:** Retrieves a list of client applications associated with the authenticated client user.
 - **Permissions Required:** `CLIENT` authority (authenticated client user).
 - **Example Request:** (No request body)
@@ -373,6 +330,41 @@ Base Path: `/api/v1/client-applications`
   *Note: The structure of `applicationNames` might evolve to include more details per application.* 
 - **Error Responses:**
   - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or does not have `CLIENT` authority.
+
+---
+
+## Module: Role (Admin)
+
+### Controller: `AdminRoleController`
+Base Path: `/v1/adminrole`
+
+---
+
+#### 1. Create Admin Role
+- **Name:** Create Admin Role
+- **HTTP Method:** `POST`
+- **URL:** `/v1/adminrole`
+- **Description:** Creates a new administrative role for dashboard users.
+- **Permissions Required:** `ADMIN_SUPER_ADMIN` authority.
+- **Example Request (`application/json`):
+  ```json
+  {
+    "name": "CONTENT_MODERATOR"
+  }
+  ```
+- **Example Response (`201 CREATED`, `application/json`):
+  ```json
+  {
+    "id": "_new_role_uuid_string_",
+    "name": "CONTENT_MODERATOR",
+    "createdAt": "2023-10-27T11:00:00Z",
+    "updatedAt": "2023-10-27T11:00:00Z"
+  }
+  ```
+- **Error Responses:**
+  - `400 BAD_REQUEST`: If `name` is blank or fails validation (e.g., too short/long).
+  - `401 UNAUTHORIZED` / `403 FORBIDDEN`: If the user is not authenticated or lacks `ADMIN_SUPER_ADMIN` authority.
+  - `409 CONFLICT`: If a role with the same name already exists.
 
 ---
 
@@ -488,14 +480,14 @@ Base Path: `/v1/status`
 ## Module: Policy (MautUser)
 
 ### Controller: `PolicyController`
-Base Path: `/v1/policies`
+Base Path: `/v1/policy`
 
 ---
 
 #### 1. Apply Signing Policy
 - **Name:** Apply Signing Policy
 - **HTTP Method:** `POST`
-- **URL:** `/v1/policies/apply-signing-policy`
+- **URL:** `/v1/policy/apply-signing-policy`
 - **Description:** Applies a signing policy to a `MautUser`'s Turnkey entities. The specific `MautUser` is expected to be identified from their session (e.g., via `mautSessionToken`).
 - **Example Request (`application/json`):
   ```json
@@ -534,14 +526,14 @@ Base Path: `/v1/policies`
 ## Module: Role (Admin)
 
 ### Controller: `AdminRoleController`
-Base Path: `/api/v1/admin/roles`
+Base Path: `/v1/adminrole`
 
 ---
 
 #### 1. Create Admin Role
 - **Name:** Create Admin Role
 - **HTTP Method:** `POST`
-- **URL:** `/api/v1/admin/roles`
+- **URL:** `/v1/adminrole`
 - **Description:** Creates a new administrative role for dashboard users.
 - **Permissions Required:** `ADMIN_SUPER_ADMIN` authority.
 - **Example Request (`application/json`):
@@ -602,14 +594,14 @@ Base Path: `/v1/session`
 ## Module: Transaction (MautUser)
 
 ### Controller: `TransactionController`
-Base Path: `/v1/transactions`
+Base Path: `/v1/transaction`
 
 ---
 
 #### 1. Initiate Signing
 - **Name:** Initiate Transaction Signing
 - **HTTP Method:** `POST`
-- **URL:** `/v1/transactions/initiate-signing`
+- **URL:** `/v1/transaction/initiate-signing`
 - **Description:** Initiates a transaction signing process for the authenticated `MautUser`. This creates an activity that the user will need to approve (e.g., via a passkey challenge or other configured policy).
 - **Example Request (`application/json`):
   ```json
@@ -640,14 +632,14 @@ Base Path: `/v1/transactions`
 ## Module: Wallet (MautUser)
 
 ### Controller: `WalletController`
-Base Path: `/v1/wallets`
+Base Path: `/v1/wallet`
 
 ---
 
 #### 1. Enroll New Wallet
 - **Name:** Enroll New Wallet
 - **HTTP Method:** `POST`
-- **URL:** `/v1/wallets/enroll`
+- **URL:** `/v1/wallet/enroll`
 - **Description:** Enrolls a new wallet for the authenticated `MautUser`. This typically involves creating a new sub-organization and private keys within Turnkey.
 - **Example Request (`application/json`):
   ```json
@@ -672,7 +664,7 @@ Base Path: `/v1/wallets`
 #### 2. Get Wallet Details
 - **Name:** Get Wallet Details
 - **HTTP Method:** `GET`
-- **URL:** `/v1/wallets/details`
+- **URL:** `/v1/wallet/details`
 - **Description:** Retrieves details for the authenticated `MautUser`'s enrolled wallet.
 - **Example Request:** (No request body)
 - **Example Response (`200 OK`, `application/json`):

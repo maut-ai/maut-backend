@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/admin/roles") // Using /api/v1 prefix for consistency
+@RequestMapping("/v1/adminrole")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminRoleController {

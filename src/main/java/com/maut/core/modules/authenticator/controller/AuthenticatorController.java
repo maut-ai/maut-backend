@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/maut-user/authenticators") 
+@RequestMapping("/v1/authenticator") 
 @RequiredArgsConstructor
 @Slf4j
 public class AuthenticatorController {
