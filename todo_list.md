@@ -106,3 +106,8 @@
 
 - [x] **Task 15: Resolve "Port 8080 already in use" error**
   - [x] 15.1: Modify `bin/start_and_healthcheck.sh` to use a different port (e.g., 8081).
+
+- [x] **Task 16: Enhance Client Registration API**
+  - [x] 16.1: Modify `/v1/auth/client/register` endpoint to return a JWT upon successful registration.
+  - [x] 16.2: Update API documentation for the new response structure.
+  - [x] 16.3: Run health check and verify.

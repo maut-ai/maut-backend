@@ -109,8 +109,12 @@ Base Path: `/v1/auth`
     "teamName": "Doe's Company"
   }
   ```
-- **Example Response:** 
-  - `201 CREATED` (No body on success)
+- **Example Response (`201 CREATED`, `application/json`):
+  ```json
+  {
+    "accessToken": "_generated_jwt_token_string_"
+  }
+  ```
   - `4xx/5xx` with error message on failure.
     ```json
     // Example Error (e.g., 500 Internal Server Error)
@@ -689,3 +693,38 @@ Base Path: `/v1/wallet`
   - `5xx`: Server-side errors.
 
 ---
+
+## Module: Auth (Dashboard User Authentication)
+
+### Controller: `AuthController`
+Base Path: `/v1/auth`
+
+---
+
+#### 1. Register Client User
+- **Name:** Register Client User
+- **HTTP Method:** `POST`
+- **URL:** `/v1/auth/client/register`
+- **Description:** Registers a new client user (for dashboard access).
+- **Example Request (`application/json`):
+  ```json
+  {
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "password": "Str0ngPa$$w0rd!",
+    "confirmPassword": "Str0ngPa$$w0rd!",
+    "teamName": "Doe's Company"
+  }
+  ```
+- **Example Response (`201 CREATED`, `application/json`):
+  ```json
+  {
+    "accessToken": "_generated_jwt_token_string_"
+  }
+  ```
+  - `4xx/5xx` with error message on failure.
+    ```json
+    // Example Error (e.g., 500 Internal Server Error)
+    "Registration failed: Email already exists"
+    ```
