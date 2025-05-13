@@ -59,7 +59,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://dashboard.maut.ai"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "https://dashboard.maut.ai",
+                "https://maut-client-dashboard.lovable.app",
+                "http://localhost:3001",
+                "http://localhost:3002"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",

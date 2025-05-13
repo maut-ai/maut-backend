@@ -10,7 +10,8 @@ cd "$PROJECT_ROOT" || exit 1
 
 LOG_PREFIX="[start_and_healthcheck]"
 SERVER_PID_FILE=".server.pid"
-HEALTHCHECK_URL="http://localhost:8080/v1/status"
+HEALTHCHECK_PORT=8081 # New port for the health check server
+HEALTHCHECK_URL="http://localhost:${HEALTHCHECK_PORT}/v1/status"
 TIMEOUT_SECONDS=30
 POLL_INTERVAL_SECONDS=2
 
@@ -20,7 +21,7 @@ cleanup() {
     if [ -f "$SERVER_PID_FILE" ]; then
         SERVER_PID=$(cat "$SERVER_PID_FILE")
         if ps -p "$SERVER_PID" > /dev/null; then
-            echo "$LOG_PREFIX Stopping Spring Boot application (PID: $SERVER_PID)..."
+            echo "$LOG_PREFIX Stopping Spring Boot application (PID: $SERVER_PID) on port $HEALTHCHECK_PORT..."
             # On macOS, we don't have process groups like Linux, so kill the PID directly
             kill -TERM "$SERVER_PID" 2>/dev/null || kill -KILL "$SERVER_PID" 2>/dev/null
             # Wait a moment for the process to terminate
@@ -37,18 +38,18 @@ cleanup() {
         rm -f "$SERVER_PID_FILE"
     else
         echo "$LOG_PREFIX PID file not found. No server process to stop explicitly via PID file."
-        # As a fallback, try to find and kill any lingering Spring Boot processes on port 8080
+        # As a fallback, try to find and kill any lingering Spring Boot processes on the healthcheck port
         # This is a bit more aggressive and less precise
-        LSOF_PID=$(lsof -t -i:8080 -sTCP:LISTEN)
+        LSOF_PID=$(lsof -t -i:"$HEALTHCHECK_PORT" -sTCP:LISTEN)
         if [ -n "$LSOF_PID" ]; then
-            echo "$LOG_PREFIX Found process $LSOF_PID listening on port 8080. Attempting to kill it."
+            echo "$LOG_PREFIX Found process $LSOF_PID listening on port $HEALTHCHECK_PORT. Attempting to kill it."
             kill -TERM "$LSOF_PID" 2>/dev/null || kill -KILL "$LSOF_PID" 2>/dev/null
             sleep 1
             if ps -p "$LSOF_PID" > /dev/null; then
                  echo "$LOG_PREFIX Process $LSOF_PID did not terminate, forcing kill."
                  kill -KILL "$LSOF_PID" 2>/dev/null
             else
-                echo "$LOG_PREFIX Process $LSOF_PID listening on port 8080 stopped."
+                echo "$LOG_PREFIX Process $LSOF_PID listening on port $HEALTHCHECK_PORT stopped."
             fi
         fi    
     fi
@@ -65,9 +66,9 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Start the Spring Boot application in the background
-echo "$LOG_PREFIX Starting Spring Boot application..."
+echo "$LOG_PREFIX Starting Spring Boot application on port $HEALTHCHECK_PORT..."
 # On macOS, we'll use a simpler approach for background processes
-mvn clean spring-boot:run > mvn_output.log 2>&1 & 
+mvn clean spring-boot:run -Dspring-boot.run.arguments="--server.port=${HEALTHCHECK_PORT}" > mvn_output.log 2>&1 & 
 echo $! > "$SERVER_PID_FILE"
 
 # Brief pause to allow the server to attempt to start and PID file to be written

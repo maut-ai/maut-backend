@@ -83,12 +83,12 @@
   - [x] 11.1: Gather all controller definitions and their DTOs.
   - [x] 11.2: Create `docs/api_definitions.md` with details for each endpoint (name, method, URL, description, example request/response).
 
-- [ ] **Task 12: CORS Configuration for Frontend-Backend Communication**
+- [x] **Task 12: CORS Configuration for Frontend-Backend Communication**
   - [x] 12.1: Configure backend to allow requests from `https://dashboard.maut.ai` by updating `SecurityConfig.java`.
-  - [ ] 12.2: (Optional) Add any local development frontend URLs to CORS allowed origins.
+  - [x] 12.2: (Optional) Add any local development frontend URLs to CORS allowed origins.
   - [ ] 12.3: Test frontend to backend communication.
 
-- [ ] **Task 13: Refine Authentication/Authorization Error Handling**
+- [x] **Task 13: Refine Authentication/Authorization Error Handling**
   - [x] 13.1: Create `CustomAuthenticationEntryPoint` to ensure 401 JSON responses for authentication failures.
   - [x] 13.2: Update `SecurityConfig` to use `CustomAuthenticationEntryPoint` for authentication failures and `CustomAccessDeniedHandler` for authorization failures.
   - [ ] 13.3: Verify 401 (unauthenticated), 403 (unauthorized), and 404 (not found) responses are correct and have JSON bodies.
@@ -104,4 +104,5 @@
   - [x] 14.7: Update `docs/api_definitions.md` with new base paths and endpoint URLs for `AuthController`, `AuthenticatorController`, `ClientApplicationController`, `AdminRoleController`.
   - [x] 14.8: Run `bin/start_and_healthcheck.sh` and fix any errors.
 
-- [ ] **Task 15: Resolve "Port 8080 already in use" error**
+- [x] **Task 15: Resolve "Port 8080 already in use" error**
+  - [x] 15.1: Modify `bin/start_and_healthcheck.sh` to use a different port (e.g., 8081).
