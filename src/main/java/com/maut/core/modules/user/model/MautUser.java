@@ -3,6 +3,7 @@ package com.maut.core.modules.user.model;
 import com.maut.core.modules.clientapplication.model.ClientApplication; // Updated import
 import com.maut.core.modules.wallet.model.UserWallet;
 import com.maut.core.modules.authenticator.model.UserAuthenticator;
+import com.maut.core.modules.team.model.Team; // Added import for Team
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -49,6 +50,13 @@ public class MautUser {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_application_id", nullable = false)
     private ClientApplication clientApplication;
+
+    /**
+     * The team this user belongs to, derived from the client application.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = true) // Nullable for now, can be made non-nullable if always set
+    private Team team;
 
     /**
      * The user's identifier within the client application's system.

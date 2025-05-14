@@ -56,6 +56,9 @@ public class SessionService {
             newUser.setMautUserId(UUID.randomUUID());
             newUser.setClientApplication(clientApp);
             newUser.setClientSystemUserId(clientSystemUserId);
+            if (clientApp.getTeam() != null) { 
+                newUser.setTeam(clientApp.getTeam());
+            }
             mautUser = mautUserRepository.save(newUser);
             isNewMautUser = true;
         }

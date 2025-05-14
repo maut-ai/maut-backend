@@ -99,3 +99,14 @@
 - `X-Stamp` header is crucial for Turnkey API authentication.
 - Generic DTOs (`ActivityResponsePayload`, `TurnkeyActivityResponseWrapper`) improve reusability for different Turnkey activities.
 - **Note:** Temporarily pivoted to a demo mode for `WalletService.enrollNewWallet` due to ongoing Turnkey authentication issues. This involves local Ethereum key generation and storage of the raw private key, bypassing actual Turnkey calls.
+
+### Completed
+- [x] CORE-001: Initial project setup and basic Spring Boot application structure.
+- [x] CORE-002: Setup PostgreSQL database and integrate with Spring Data JPA.
+- [x] WALLET-001: Implement demo mode for `WalletService.enrollNewWallet` (local Ethereum key generation, bypass Turnkey)
+  - Note: This is a temporary implementation due to ongoing Turnkey authentication and sub-organization creation issues. The goal is to allow frontend development to proceed. Will require proper Turnkey integration later.
+  - Updated to use DEMO-<uuid_substring> for `turnkeyUserPrivateKeyId` and `turnkeySubOrganizationId` to prevent collisions.
+- [x] USER-MOD-001: Store Team for MautUser upon creation, based on the ClientApplication's owning Team. (Completed: 2025-05-14)
+
+### Future / Backlog
+- [ ] Investigate and resolve Turnkey authentication and sub-organization creation issues.
