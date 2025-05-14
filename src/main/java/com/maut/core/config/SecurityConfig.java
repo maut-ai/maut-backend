@@ -62,7 +62,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3001",
                 "http://localhost:3002",
-                "https://app.maut.ai"
+                "https://app.maut.ai",
+                "https://maut-demo-app.lovable.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
