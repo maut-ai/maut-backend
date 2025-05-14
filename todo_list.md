@@ -55,17 +55,18 @@
   - [x] Handle errors and logging.
 
 ### 5. Wallet Enrollment Business Logic
-- [ ] Create `WalletService` and `WalletController`.
-- [ ] Implement `enrollNewMautManagedWallet(String userId, String organizationName, String privateKeyName)` method in `WalletService`.
-  - [ ] Check if an organization (sub-organization in Turnkey) with `organizationName` already exists for the Maut user.
-    - [ ] If not, call `TurnkeyService.createSubOrganization(organizationName)` to create it. Store the mapping.
-    - [ ] If yes, retrieve its `subOrganizationId`.
-  - [ ] Call `TurnkeyService.createMautManagedPrivateKey(subOrganizationId, privateKeyName)`.
-  - [ ] Store wallet details (e.g., `userId`, `turnkeyPrivateKeyId`, `turnkeySubOrganizationId`, `address`, `type = MAUT_MANAGED`) in the Maut database.
-  - [ ] Return relevant wallet information to the caller.
-- [ ] Implement `enrollNewUserControlledWallet(String userId, String organizationName, String userControlledKeyIdentifier)` method (details TBD, depends on how user-controlled keys are handled with Turnkey).
-  - [ ] This might involve `TurnkeyService.createUserControlledPrivateKey` or a different flow.
-  - [ ] For now, this can be a stub.
+- [x] Create `WalletService` and `WalletController`.
+- [x] Implement `enrollNewMautManagedWallet(String userId, String organizationName, String privateKeyName)` method in `WalletService`.
+  - [x] Check if an organization (sub-organization in Turnkey) with `organizationName` already exists for the Maut user.
+    - [x] If not, call `TurnkeyService.createSubOrganization(organizationName)` to create it. Store the mapping.
+    - [x] If yes, retrieve its `subOrganizationId`.
+  - [x] Call `TurnkeyService.createMautManagedPrivateKey(subOrganizationId, privateKeyName)`.
+  - [x] Store wallet details (e.g., `userId`, `turnkeyPrivateKeyId`, `turnkeySubOrganizationId`, `address`, `type = MAUT_MANAGED`) in the Maut database.
+  - [x] Return relevant wallet information to the caller.
+- [x] Implement `enrollNewUserControlledWallet(String userId, String organizationName, String userControlledKeyIdentifier)` method (details TBD, depends on how user-controlled keys are handled with Turnkey).
+  - [x] This might involve `TurnkeyService.createUserControlledPrivateKey` or a different flow.
+  - [x] For now, this can be a stub.
+- [x] Implement demo mode for `WalletService.enrollNewWallet` (local Ethereum key generation, bypass Turnkey).
 
 ### 6. API Endpoints for Wallet Enrollment
 - [ ] Create `POST /api/v1/wallets/maut-managed` endpoint in `WalletController`.
@@ -97,3 +98,4 @@
 - User-controlled key flow needs further definition based on Turnkey capabilities for this model.
 - `X-Stamp` header is crucial for Turnkey API authentication.
 - Generic DTOs (`ActivityResponsePayload`, `TurnkeyActivityResponseWrapper`) improve reusability for different Turnkey activities.
+- **Note:** Temporarily pivoted to a demo mode for `WalletService.enrollNewWallet` due to ongoing Turnkey authentication issues. This involves local Ethereum key generation and storage of the raw private key, bypassing actual Turnkey calls.

@@ -22,6 +22,7 @@ import java.security.NoSuchProviderException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class WalletServiceImpl implements WalletService {
         try {
             ECKeyPair ecKeyPair = Keys.createEcKeyPair();
             privateKeyHex = Numeric.toHexStringWithPrefix(ecKeyPair.getPrivateKey());
-            newWalletAddress = Keys.getAddress(ecKeyPair.getPublicKey());
+            newWalletAddress = "0x" + Keys.getAddress(ecKeyPair.getPublicKey());
             log.info("Generated new DEMO Ethereum wallet. Address: {}, MautUser ID: {}", newWalletAddress, mautUser.getId());
 
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e) {
@@ -65,11 +66,12 @@ public class WalletServiceImpl implements WalletService {
         newUserWallet.setCreatedAt(Instant.now());
         newUserWallet.setUpdatedAt(Instant.now());
 
-        newUserWallet.setTurnkeyMautPrivateKeyId(privateKeyHex);
-        newUserWallet.setTurnkeyUserPrivateKeyId("DEMO");
-        newUserWallet.setTurnkeySubOrganizationId("DEMO");
+        String randomSuffix = UUID.randomUUID().toString().substring(0, 8); 
+        newUserWallet.setTurnkeyMautPrivateKeyId(privateKeyHex); 
+        newUserWallet.setTurnkeyUserPrivateKeyId("DEMO-" + randomSuffix);
+        newUserWallet.setTurnkeySubOrganizationId("DEMO-" + randomSuffix);
 
-        UserWallet savedWallet = userWalletRepository.save(newUserWallet);
+        UserWallet savedWallet = userWalletRepository.save(newUserWallet); 
         log.info("Successfully enrolled and saved DEMO wallet with ID: {} for MautUser ID: {}", savedWallet.getId(), mautUser.getId());
 
         return new EnrollWalletResponse(savedWallet.getId().toString(), savedWallet.getWalletAddress());
