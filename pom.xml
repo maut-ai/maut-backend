@@ -92,6 +92,13 @@
             <version>1.15</version>
         </dependency>
         
+        <!-- Web3j for Ethereum interactions -->
+        <dependency>
+            <groupId>org.web3j</groupId>
+            <artifactId>core</artifactId>
+            <version>4.10.0</version> <!-- Using a recent stable version -->
+        </dependency>
+
         <!-- BouncyCastle Dependencies -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
