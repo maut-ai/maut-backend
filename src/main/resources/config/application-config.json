@@ -26,5 +26,15 @@
   "jwt": {
     "secretKey": "changeThisInProductionEnvironmentToAVeryLongAndSecureRandomString", 
     "expirationTimeMs": 36000000 
+  },
+  "turnkey": {
+    "api": {
+      "key": "031801eec97d405e61aa1da32320609811fbd6dd99919acca81848f97cad330071",
+      "secret": "ecb72f9775c2ec8dbd9fdb15c9682689ffacba15392a9dbc0698ba0ccfd27428",
+      "baseUrl": "https://api.turnkey.com",
+      "organizationId": "3c34926c-f8a0-4344-843f-5b98dcfdf45b"
+    }
+  },
+  "cors": {
   }
 }

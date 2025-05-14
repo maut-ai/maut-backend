@@ -1,17 +1,17 @@
 package com.maut.core.modules.wallet.service;
 
-import com.maut.core.common.exception.ResourceNotFoundException; // Added import
-// import com.maut.core.common.exception.TurnkeyOperationException; // Commented out as Turnkey logic is placeholder
+import com.maut.core.common.exception.ResourceNotFoundException; 
 import com.maut.core.common.exception.UserAlreadyHasWalletException;
 import com.maut.core.modules.user.model.MautUser;
-// import com.maut.core.modules.wallet.dto.EnrollWalletRequest; // Removed unused import
 import com.maut.core.modules.wallet.dto.EnrollWalletResponse;
 import com.maut.core.modules.wallet.dto.WalletDetailsResponse;
 import com.maut.core.modules.wallet.model.UserWallet;
 import com.maut.core.modules.wallet.repository.UserWalletRepository;
-// import com.maut.core.external.turnkey.TurnkeyService; // To be created
-// import com.maut.core.external.turnkey.model.TurnkeyPrivateKey;
-// import com.maut.core.external.turnkey.model.TurnkeySubOrganization;
+import com.maut.core.external.turnkey.TurnkeyService; 
+import com.maut.core.external.turnkey.model.TurnkeyPrivateKey;
+import com.maut.core.external.turnkey.model.TurnkeySubOrganization;
+import com.maut.core.integration.turnkey.exception.TurnkeyOperationException; 
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ import java.util.UUID;
 public class WalletServiceImpl implements WalletService {
 
     private final UserWalletRepository userWalletRepository;
-    // private final TurnkeyService turnkeyService; // To be uncommented
+    private final TurnkeyService turnkeyService; 
 
     @Override
     @Transactional
@@ -44,56 +43,63 @@ public class WalletServiceImpl implements WalletService {
             throw new UserAlreadyHasWalletException("User already has an enrolled wallet.");
         }
 
-        // --- Placeholder for Turnkey Integration --- //
-        // String turnkeySubOrgId = "";
-        // String turnkeyPrivateKeyId = "";
-        // String newWalletAddress = "";
-        //
-        // try {
-        //     log.debug("Creating Turnkey sub-organization for user ID: {}", mautUser.getId());
-        //     TurnkeySubOrganization subOrg = turnkeyService.createSubOrganization("wallet-for-" + mautUser.getId().toString());
-        //     turnkeySubOrgId = subOrg.getId();
-        //     log.info("Turnkey sub-organization created with ID: {}", turnkeySubOrgId);
-        //
-        //     log.debug("Creating Turnkey private key for sub-organization ID: {}", turnkeySubOrgId);
-        //     TurnkeyPrivateKey privateKey = turnkeyService.createPrivateKey(turnkeySubOrgId);
-        //     turnkeyPrivateKeyId = privateKey.getId();
-        //     newWalletAddress = privateKey.getAddress(); // Assuming TurnkeyPrivateKey has a getAddress() method
-        //     log.info("Turnkey private key created with ID: {} and address: {}", turnkeyPrivateKeyId, newWalletAddress);
-        //
-        // } catch (Exception e) {
-        //     log.error("Error during Turnkey operations for user ID: {}: {}", mautUser.getId(), e.getMessage(), e);
-        //     throw new TurnkeyOperationException("Failed to create Turnkey resources: " + e.getMessage(), e);
-        // }
-        // --- End Placeholder --- //
+        String turnkeySubOrgId;
+        String mautTurnkeyPrivateKeyId;
+        String userTurnkeyPrivateKeyId;
+        String newWalletAddress;
+        // String defaultPolicyId = null; 
 
-        // For now, using placeholder values until TurnkeyService is implemented
-        String turnkeySubOrgId = "placeholder-suborg-" + UUID.randomUUID().toString();
-        String turnkeyPrivateKeyId = "placeholder-privkey-" + UUID.randomUUID().toString();
-        String newWalletAddress = "0x" + UUID.randomUUID().toString().replace("-", "");
-        log.info("Using placeholder Turnkey IDs. SubOrg: {}, PrivateKey: {}, WalletAddress: {}",
-            turnkeySubOrgId, turnkeyPrivateKeyId, newWalletAddress);
+        try {
+            log.debug("Creating Turnkey sub-organization for MautUser ID: {}", mautUser.getId());
+            String subOrgName = "maut-wallet-" + mautUser.getId();
+            TurnkeySubOrganization subOrg = turnkeyService.createSubOrganization(subOrgName);
+            turnkeySubOrgId = subOrg.getSubOrganizationId();
+            log.info("Turnkey sub-organization created with ID: {}", turnkeySubOrgId);
 
+            log.debug("Creating Maut-managed Turnkey private key for sub-organization ID: {}", turnkeySubOrgId);
+            String mautManagedKeyName = "maut-managed-key-" + turnkeySubOrgId;
+            TurnkeyPrivateKey mautPrivateKey = turnkeyService.createMautManagedPrivateKey(turnkeySubOrgId, mautManagedKeyName);
+            mautTurnkeyPrivateKeyId = mautPrivateKey.getPrivateKeyId();
+            newWalletAddress = mautPrivateKey.getAddress(); 
+            log.info("Maut-managed Turnkey private key created with ID: {} and address: {}", mautTurnkeyPrivateKeyId, newWalletAddress);
+
+            log.debug("Creating User-controlled Turnkey private key for sub-organization ID: {}, MautUser ID: {}", turnkeySubOrgId, mautUser.getId().toString());
+            String userControlledKeyName = "user-controlled-key-" + mautUser.getId();
+            TurnkeyPrivateKey userPrivateKey = turnkeyService.createUserControlledPrivateKey(turnkeySubOrgId, mautUser.getId().toString(), userControlledKeyName);
+            userTurnkeyPrivateKeyId = userPrivateKey.getPrivateKeyId();
+            log.info("User-controlled Turnkey private key created with ID: {}", userTurnkeyPrivateKeyId);
+            
+            // Optional: Assign default policy
+            // defaultPolicyId = turnkeyService.assignDefaultPolicyToPrivateKey(mautTurnkeyPrivateKeyId, "YOUR_DEFAULT_POLICY_ID_HERE");
+            // log.info("Assigned default policy. Activity ID: {}", defaultPolicyId);
+
+        } catch (TurnkeyOperationException e) { 
+            log.error("Error during Turnkey operations for MautUser ID: {}: {}", mautUser.getId(), e.getMessage(), e);
+            throw new TurnkeyOperationException("Failed to create Turnkey resources during wallet enrollment: " + e.getMessage(), e);
+        } catch (Exception e) { 
+            log.error("Unexpected error during Turnkey operations for MautUser ID: {}: {}", mautUser.getId(), e.getMessage(), e);
+            throw new RuntimeException("Unexpected error during wallet enrollment: " + e.getMessage(), e);
+        }
 
         UserWallet newUserWallet = new UserWallet();
         newUserWallet.setMautUser(mautUser);
-        newUserWallet.setWalletAddress(newWalletAddress);
+        newUserWallet.setWalletAddress(newWalletAddress); 
         newUserWallet.setWalletDisplayName(walletDisplayName);
-        newUserWallet.setTurnkeySubOrganizationId(turnkeySubOrgId); // Assuming UserWallet has these fields
-        newUserWallet.setTurnkeyMautPrivateKeyId(turnkeyPrivateKeyId); // Corrected field name
+        newUserWallet.setTurnkeySubOrganizationId(turnkeySubOrgId);
+        newUserWallet.setTurnkeyMautPrivateKeyId(mautTurnkeyPrivateKeyId); 
+        newUserWallet.setTurnkeyUserPrivateKeyId(userTurnkeyPrivateKeyId); 
+        // newUserWallet.setDefaultTurnkeyPolicyId(defaultPolicyId); 
 
-        userWalletRepository.save(newUserWallet);
-        log.info("New UserWallet record saved with ID: {} for MautUser ID: {}", newUserWallet.getId(), mautUser.getId());
+        UserWallet savedWallet = userWalletRepository.save(newUserWallet);
+        log.info("Successfully enrolled new wallet with ID: {} for MautUser ID: {}", savedWallet.getId(), mautUser.getId());
 
-        return new EnrollWalletResponse(newWalletAddress);
+        return new EnrollWalletResponse(savedWallet.getId().toString(), savedWallet.getWalletAddress());
     }
 
     @Override
     public WalletDetailsResponse getWalletDetails(MautUser mautUser) {
         if (mautUser == null) {
             log.error("MautUser cannot be null for fetching wallet details.");
-            // In a real app with Spring Security, this might be handled differently,
-            // as @AuthenticationPrincipal would typically ensure mautUser is not null or deny access.
             throw new IllegalArgumentException("Authenticated MautUser is required to fetch wallet details.");
         }
         log.info("Fetching wallet details for MautUser ID: {}", mautUser.getId());

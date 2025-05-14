@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EnrollWalletResponse {
 
+    private String walletId;
     private String walletAddress;
 
 }

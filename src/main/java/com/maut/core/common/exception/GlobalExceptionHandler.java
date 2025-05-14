@@ -2,7 +2,6 @@ package com.maut.core.common.exception;
 
 import com.maut.core.common.exception.dto.ErrorResponseDto;
 import com.maut.core.modules.auth.exception.PasswordMismatchException;
-import com.maut.core.common.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

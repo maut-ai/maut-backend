@@ -1,99 +1,99 @@
-# Todo List
+# Maut Backend TODO List
 
-## Task: Fix JWT SignatureException and Implement MautUser Authentication for Wallet/Authenticator Endpoints
+## Phase 1: Core Setup & Initial Turnkey Integration (Wallet Enrollment)
 
--   [x] Modify `SecurityConfig.java` to `permitAll()` for `/v1/wallets/**` and `/v1/authenticator/**` to prevent `JwtAuthFilter` from processing these requests.
--   [x] Add `validateMautSessionTokenAndGetMautUser(String mautSessionToken)` method to `SessionService.java` to:
-    -   Use `JwtUtil` to extract `mautUserId` and expiration from the token.
-    -   Validate token (not expired, signature implicitly checked by `JwtUtil`).
-    -   Fetch `MautUser` from `MautUserRepository` using `mautUserId`.
--   [x] Update `WalletController.java`:
-    -   Inject `SessionService`.
-    -   Modify `enrollWallet` and `getWalletDetails` to accept `X-Maut-Session-Token` header.
-    -   Use `SessionService` to get `MautUser` and pass to `WalletService`.
--   [x] Update `AuthenticatorController.java`:
-    -   Inject `SessionService`.
-    -   Modify all endpoint methods to accept `X-Maut-Session-Token` header.
-    -   Use `SessionService` to get `MautUser` and pass to `AuthenticatorService`.
--   [x] Run `bin/start_and_healthcheck.sh` to verify all changes and ensure the application starts correctly.
--   [x] Address any linting or startup errors if they occur.
+### 1. Project Setup & Basic Structure
+- [x] Initialize Spring Boot project with necessary dependencies (Web, JPA, Security, PostgreSQL, Lombok, Jackson).
+- [x] Configure basic application properties (server port, database connection).
+- [x] Set up basic package structure (e.g., `com.maut.core.controller`, `com.maut.core.service`, `com.maut.core.repository`, `com.maut.core.model`, `com.maut.core.config`, `com.maut.core.external`).
+- [x] Implement basic health check endpoint (`/status`).
 
----
+### 2. Database Setup & Migrations
+- [x] Integrate Flyway for database migrations.
+- [x] Create initial migration script for core tables (e.g., `users`, `wallets`, `organizations`). (Schema TBD, placeholder for now)
 
-# Maut Backend To-Do List
+### 3. User Authentication & Authorization (Basic)
+- [x] Implement basic JWT-based authentication.
+- [x] Create `User` entity and repository.
+- [x] Create `AuthService` for user registration and login.
+- [x] Secure relevant endpoints.
 
-- [x] **Task 18: Improve Duplicate Data Handling in Client Registration**
-  - [x] 18.1: Create `EmailAlreadyExistsException` and `TeamNameAlreadyExistsException`.
-  - [x] 18.2: Modify `AuthService.registerClient()` to check for existing email and team name before saving, throwing custom exceptions.
-  - [x] 18.3: Update `GlobalExceptionHandler` to handle new exceptions with 409 CONFLICT.
-  - [x] 18.4: Run health check and verify.
+### 4. Turnkey API Integration - Foundation
+- [x] Define Turnkey API configuration properties (API key, secret, base URL, organization ID).
+- [x] Create `RestTemplate` bean for Turnkey API calls.
+- [x] Create `TurnkeyService` interface and `TurnkeyServiceImpl` for interacting with Turnkey.
+  - [x] Add method signature for `createSubOrganization(String subOrganizationName)` -> `TurnkeySubOrganization`.
+  - [x] Add method signature for `createMautManagedPrivateKey(String subOrganizationId, String privateKeyName)` -> `TurnkeyPrivateKey`.
+  - [x] Add method signature for `createUserControlledPrivateKey(String subOrganizationId, String userId)` -> `TurnkeyPrivateKey`.
+- [x] Create DTOs for Turnkey API requests and responses:
+  - **Sub-organization Creation:**
+    - [x] `CreateSubOrganizationRequest`
+    - [x] `SubOrganizationParameters`
+    - [x] `RootUserPayload`
+    - [x] `TurnkeyActivityResponseWrapper` (generic for various activity responses)
+    - [x] `ActivityResponsePayload` (generic for various activity results)
+    - [x] `CreateSubOrgActivityResult`
+    - [x] `SubOrganizationDetails`
+  - **Private Key Creation (Maut-Managed & User-Controlled have similar structures):**
+    - [x] `CreatePrivateKeysRequest`
+    - [x] `CreatePrivateKeysParameters`
+    - [x] `PrivateKeySpecification` (name, algorithm, curve, tags)
+    - [x] `CreatePrivateKeysActivityResult`
+    - [x] `CreatePrivateKeysResultV2Payload`
+    - [x] `PrivateKeyDetails` (id, name, status, algorithm, curve, addresses)
+    - [x] `Address` (format, address)
+- [x] Implement `TurnkeyAuthenticator` utility for `X-Stamp` header generation (HMAC-SHA256).
+- [x] Implement `createSubOrganization` in `TurnkeyServiceImpl`.
+  - [x] Construct request payload.
+  - [x] Make POST request to `/public/v1/submit/create_sub_organization`.
+  - [x] Parse response and extract `subOrganizationId`.
+  - [x] Handle errors and logging.
+- [x] Implement `createMautManagedPrivateKey` in `TurnkeyServiceImpl`.
+  - [x] Construct request payload.
+  - [x] Make POST request to `/public/v1/submit/create_private_keys`.
+  - [x] Parse response and extract `privateKeyId` and `address`.
+  - [x] Handle errors and logging.
 
-- [ ] **Task 19: Enhance `/v1/auth/me` API Response**
-  - [x] 19.1: Create `TeamMembershipInfoResponseDto` (teamId, teamName, userRoleName).
-  - [x] 19.2: Create `AuthenticatedUserResponseDto` (userDetails without passwordHash, List<TeamMembershipInfoResponseDto>).
-  - [ ] 19.3: Review and potentially update `User` entity's `teamMemberships` fetching strategy.
-  - [ ] 19.4: Modify `AuthController.getCurrentUser()` to fetch team memberships and return `AuthenticatedUserResponseDto`.
-  - [ ] 19.5: Update `docs/api_definitions.md` for `/v1/auth/me` with the new response structure.
-  - [ ] 19.6: Run health check and verify.
+### 5. Wallet Enrollment Business Logic
+- [ ] Create `WalletService` and `WalletController`.
+- [ ] Implement `enrollNewMautManagedWallet(String userId, String organizationName, String privateKeyName)` method in `WalletService`.
+  - [ ] Check if an organization (sub-organization in Turnkey) with `organizationName` already exists for the Maut user.
+    - [ ] If not, call `TurnkeyService.createSubOrganization(organizationName)` to create it. Store the mapping.
+    - [ ] If yes, retrieve its `subOrganizationId`.
+  - [ ] Call `TurnkeyService.createMautManagedPrivateKey(subOrganizationId, privateKeyName)`.
+  - [ ] Store wallet details (e.g., `userId`, `turnkeyPrivateKeyId`, `turnkeySubOrganizationId`, `address`, `type = MAUT_MANAGED`) in the Maut database.
+  - [ ] Return relevant wallet information to the caller.
+- [ ] Implement `enrollNewUserControlledWallet(String userId, String organizationName, String userControlledKeyIdentifier)` method (details TBD, depends on how user-controlled keys are handled with Turnkey).
+  - [ ] This might involve `TurnkeyService.createUserControlledPrivateKey` or a different flow.
+  - [ ] For now, this can be a stub.
 
-- [ ] **Task 20: Refactor ClientApplication Module (API Key Functionality)**
-  - [x] 20.1: Update `ClientApplication` Entity & DTOs
-    - [x] Add `teamId` field to `ClientApplication.java`.
-    - [x] Rename `clientName` to `name` in `ClientApplication.java`.
-    - [x] Update `CreateClientApplicationRequest.java`: rename `clientName` to `name`.
-    - [x] Update/Create DTOs (`MyClientApplicationResponse.java`/`ClientApplicationResponse.java`, and a detail DTO) to include `id`, `name`, `mautApiClientId`, `createdAt`, `enabled`, and `allowedOrigins` (for detail view).
-  - [x] 20.2: Create Database Migration for `client_applications` Table
-    - [x] Use `bin/create_migration.sh clientapplication "Modify client_applications for team ownership and name change"`
-    - [x] Migration script to add `team_id UUID` (with FK to `teams(id)`) and rename `client_name` to `name`.
-  - [x] 20.3: Refactor `ClientApplicationAdminController` to `ClientApplicationController`
-    - [x] Rename file and class from `ClientApplicationAdminController` to `ClientApplicationController`.
-    - [x] Update `@RequestMapping` from `/v1/admin/client-applications` to `/v1/clientapplication`.
-    - [x] Adjust controller method authentication to be accessible by authenticated team members.
-  - [x] 20.4: Update `ClientApplicationService`
-    - [x] Modify `createClientApplication` method to accept `teamId` (from authenticated `User`) and use the renamed `name` field.
-    - [x] Update methods for listing and fetching client applications to filter by the authenticated user's team.
-    - [x] Address `User` to `Team` linking (how to get `Team` from `User` for service logic).
-    - [ ] Add `allowedOrigins` to `CreateClientApplicationRequest` if it should be set at creation time.
-  - [x] 20.5: Implement/Update API Endpoints in `ClientApplicationController`
-    - [x] `POST /`: Create client application for the authenticated user's team.
-    - [x] `GET /`: List client applications for the authenticated user's team (including fields: `id`, `name`, `mautApiClientId`, `createdAt`, `enabled`).
-    - [x] `GET /{clientApplicationId}`: Get details of a specific client application (including `allowedOrigins`).
-  - [x] 20.6: Run `bin/start_and_healthcheck.sh` and verify functionality.
-    - [x] Fix any linting or startup errors.
-    - [x] Verify application starts and health check passes.
-  - [x] 20.7: Update API Documentation (`docs/api_definitions.md` or OpenAPI spec).
+### 6. API Endpoints for Wallet Enrollment
+- [ ] Create `POST /api/v1/wallets/maut-managed` endpoint in `WalletController`.
+  - [ ] Request body: `userId`, `organizationName`, `privateKeyName`.
+  - [ ] Calls `WalletService.enrollNewMautManagedWallet`.
+- [ ] Create `POST /api/v1/wallets/user-controlled` endpoint (placeholder).
 
-- [ ] **Task 21: Client Application Admin Endpoints (`ClientApplicationAdminController`)**
+### 7. Testing & Refinement
+- [x] Fix compilation errors related to generics (`ActivityResponsePayload`, `TurnkeyActivityResponseWrapper`).
+- [x] Fix `TurnkeyAuthenticator` resolution and `commons-codec` dependency.
+- [x] Resolve duplicate method definitions in `TurnkeyServiceImpl`.
+- [ ] Unit tests for `TurnkeyServiceImpl` (mocking `RestTemplate`).
+- [ ] Unit tests for `WalletService` (mocking `TurnkeyService` and repositories).
+- [ ] Integration tests for wallet enrollment flow (if feasible with H2/in-memory setup or testcontainers).
+- [ ] Run `bin/start_and_healthcheck.sh` and ensure application starts and health check passes after Turnkey integration.
 
-- [x] **Task 22: Fix Lint Errors in SessionController and SessionService**
-  - [x] Fix lint errors in `SessionController.java` and `SessionService.java` by resolving missing imports.
+## Phase 2: Transaction Signing (Placeholder)
+- ... (Details TBD) ...
 
-- [x] **Task 23: Enhance Create Client Application API**
-  - [x] Include `client_secret` in the response of `POST /v1/clientapplication`.
-  - [x] Ensure `client_secret` is *only* returned upon creation and not in other responses (e.g., Get Details).
+## Phase 3: Other Core Features (Placeholder)
+- ... (Details TBD) ...
 
-- [x] **Task 24: Fix NullPointerException in ClientApplicationController**
-  - [x] Modify `com.maut.core.modules.user.model.User` to implement `org.springframework.security.core.userdetails.UserDetails`.
-  - [x] Update `UserDetailsServiceImpl.loadUserByUsername` to return the `User` object directly.
-  - [x] Address persistent lint/build errors related to Session module imports.
+## Bugs / Issues to Address:
+- (None currently identified after recent fixes)
 
-## Task: Fix 404 error for GET /v1/wallets/details when wallet not found
-
-- [x] Review `WalletServiceImpl.java` to confirm `ResourceNotFoundException` is thrown.
-- [x] Review `GlobalExceptionHandler.java` to identify why 500 was returned instead of 404.
-- [x] Add a specific handler for `com.maut.core.common.exception.ResourceNotFoundException` in `GlobalExceptionHandler.java` to return HTTP 404.
-- [x] Run `bin/start_and_healthcheck.sh` to verify changes.
-- [x] Address any linting or startup errors.
-
-## Task: Return 403 if X-Maut-Session-Token is missing
-
-- [x] Identify `MissingRequestHeaderException` as the cause of the 500 error.
-- [x] Add a new handler in `GlobalExceptionHandler.java` for `MissingRequestHeaderException.class`.
-- [x] In the handler, check if `ex.getHeaderName()` is `"X-Maut-Session-Token"`.
-- [x] If it is, return HTTP 403 with message "X-Maut-Session-Token Expected for this API".
-- [x] Otherwise, return HTTP 400 for other missing headers.
-- [x] Run `bin/start_and_healthcheck.sh` to verify changes.
-- [x] Address any linting or startup errors.
-
-## General Tasks
-- [x] Update API documentation in `docs/api_definitions.md` for `ClientApplicationController` new endpoints (Create, List, Get Details) and ensure correct placement.
+## Notes / Decisions:
+- Using Turnkey's sub-organizations to represent Maut organizations/tenants.
+- Maut-managed keys are created directly via Turnkey API.
+- User-controlled key flow needs further definition based on Turnkey capabilities for this model.
+- `X-Stamp` header is crucial for Turnkey API authentication.
+- Generic DTOs (`ActivityResponsePayload`, `TurnkeyActivityResponseWrapper`) improve reusability for different Turnkey activities.
