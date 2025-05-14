@@ -108,6 +108,7 @@ public class ClientApplicationServiceImpl implements ClientApplicationService {
                 .enabled(app.isEnabled())
                 .allowedOrigins(app.getAllowedOrigins())
                 .teamId(app.getTeam().getId())
+                .clientSecret(app.getClientSecret())
                 .build();
     }
 }
