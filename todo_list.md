@@ -77,5 +77,13 @@
   - [x] Update `UserDetailsServiceImpl.loadUserByUsername` to return the `User` object directly.
   - [x] Address persistent lint/build errors related to Session module imports.
 
+## Task: Fix 404 error for GET /v1/wallets/details when wallet not found
+
+- [x] Review `WalletServiceImpl.java` to confirm `ResourceNotFoundException` is thrown.
+- [x] Review `GlobalExceptionHandler.java` to identify why 500 was returned instead of 404.
+- [x] Add a specific handler for `com.maut.core.common.exception.ResourceNotFoundException` in `GlobalExceptionHandler.java` to return HTTP 404.
+- [x] Run `bin/start_and_healthcheck.sh` to verify changes.
+- [x] Address any linting or startup errors.
+
 ## General Tasks
 - [x] Update API documentation in `docs/api_definitions.md` for `ClientApplicationController` new endpoints (Create, List, Get Details) and ensure correct placement.

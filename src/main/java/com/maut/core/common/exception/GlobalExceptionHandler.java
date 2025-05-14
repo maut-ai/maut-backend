@@ -2,6 +2,7 @@ package com.maut.core.common.exception;
 
 import com.maut.core.common.exception.dto.ErrorResponseDto;
 import com.maut.core.modules.auth.exception.PasswordMismatchException;
+import com.maut.core.common.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,26 @@ public class GlobalExceptionHandler {
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
         
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Handle ResourceNotFoundException - when a requested application-specific resource is not found.
+     *
+     * @param ex the exception
+     * @param request the web request
+     * @return a ResponseEntity with appropriate 404 error message
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleResourceNotFoundException(
+            ResourceNotFoundException ex, WebRequest request) {
+        log.warn("Resource not found exception: {} for path: {}", ex.getMessage(), request.getDescription(false));
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(ex.getMessage() != null ? ex.getMessage() : "The requested resource was not found.")
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
