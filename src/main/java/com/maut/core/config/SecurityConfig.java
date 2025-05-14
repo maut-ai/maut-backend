@@ -102,6 +102,8 @@ public class SecurityConfig {
                 .mvcMatchers("/v1/auth/**").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/v1/status").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/v1/hello").permitAll()
+                .mvcMatchers("/v1/authenticator/**").permitAll() // Added for MautUser authentication
+                .mvcMatchers("/v1/wallets/**").permitAll()     // Added for MautUser authentication
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -62,5 +63,40 @@ public class SessionService {
         String mautSessionToken = jwtUtil.generateMautSessionToken(mautUser);
 
         return new SessionResponse(mautUser.getMautUserId(), isNewMautUser, mautSessionToken);
+    }
+
+    public MautUser validateMautSessionTokenAndGetMautUser(String mautSessionToken) {
+        if (mautSessionToken == null || mautSessionToken.isBlank()) {
+            throw new SecurityException("Maut session token is missing or empty.");
+        }
+
+        String mautUserIdString;
+        Date expirationDate;
+
+        try {
+            mautUserIdString = jwtUtil.extractMautUserIdFromMautSession(mautSessionToken);
+            expirationDate = jwtUtil.extractExpirationFromMautSession(mautSessionToken);
+        } catch (io.jsonwebtoken.JwtException e) {
+            // This catches parsing errors, signature errors, etc.
+            throw new SecurityException("Invalid Maut session token: " + e.getMessage(), e);
+        }
+
+        if (mautUserIdString == null) {
+            throw new SecurityException("Invalid Maut session token: MautUser ID not found in token.");
+        }
+
+        if (expirationDate == null || expirationDate.before(new Date())) {
+            throw new SecurityException("Invalid Maut session token: Token is expired.");
+        }
+
+        UUID mautUserId;
+        try {
+            mautUserId = UUID.fromString(mautUserIdString);
+        } catch (IllegalArgumentException e) {
+            throw new SecurityException("Invalid Maut session token: Malformed MautUser ID.", e);
+        }
+
+        return mautUserRepository.findByMautUserId(mautUserId)
+                .orElseThrow(() -> new SecurityException("Invalid Maut session token: MautUser not found."));
     }
 }

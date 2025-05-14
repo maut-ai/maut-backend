@@ -1,3 +1,25 @@
+# Todo List
+
+## Task: Fix JWT SignatureException and Implement MautUser Authentication for Wallet/Authenticator Endpoints
+
+-   [x] Modify `SecurityConfig.java` to `permitAll()` for `/v1/wallets/**` and `/v1/authenticator/**` to prevent `JwtAuthFilter` from processing these requests.
+-   [x] Add `validateMautSessionTokenAndGetMautUser(String mautSessionToken)` method to `SessionService.java` to:
+    -   Use `JwtUtil` to extract `mautUserId` and expiration from the token.
+    -   Validate token (not expired, signature implicitly checked by `JwtUtil`).
+    -   Fetch `MautUser` from `MautUserRepository` using `mautUserId`.
+-   [x] Update `WalletController.java`:
+    -   Inject `SessionService`.
+    -   Modify `enrollWallet` and `getWalletDetails` to accept `X-Maut-Session-Token` header.
+    -   Use `SessionService` to get `MautUser` and pass to `WalletService`.
+-   [x] Update `AuthenticatorController.java`:
+    -   Inject `SessionService`.
+    -   Modify all endpoint methods to accept `X-Maut-Session-Token` header.
+    -   Use `SessionService` to get `MautUser` and pass to `AuthenticatorService`.
+-   [x] Run `bin/start_and_healthcheck.sh` to verify all changes and ensure the application starts correctly.
+-   [x] Address any linting or startup errors if they occur.
+
+---
+
 # Maut Backend To-Do List
 
 - [x] **Task 18: Improve Duplicate Data Handling in Client Registration**

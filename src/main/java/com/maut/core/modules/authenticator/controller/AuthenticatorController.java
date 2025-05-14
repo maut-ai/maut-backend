@@ -5,6 +5,7 @@ import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationRespon
 import com.maut.core.modules.authenticator.dto.InitiatePasskeyRegistrationResponse;
 import com.maut.core.modules.authenticator.dto.ListPasskeysResponse;
 import com.maut.core.modules.authenticator.service.AuthenticatorService;
+import com.maut.core.modules.session.service.SessionService;
 import com.maut.core.modules.user.model.MautUser; 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,14 +30,13 @@ import javax.validation.Valid;
 public class AuthenticatorController {
 
     private final AuthenticatorService authenticatorService;
+    private final SessionService sessionService;
 
     @PostMapping("/initiate-passkey-registration")
     public ResponseEntity<InitiatePasskeyRegistrationResponse> initiatePasskeyRegistration(
-        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
-        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken */
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken
     ) {
-        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
-        // Example: MautUser mautUser = mautSessionService.validateAndGetMautUser(mautSessionToken);
+        MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
 
         InitiatePasskeyRegistrationResponse response = authenticatorService.initiatePasskeyRegistration(mautUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -43,11 +44,10 @@ public class AuthenticatorController {
 
     @PostMapping("/complete-passkey-registration")
     public ResponseEntity<CompletePasskeyRegistrationResponse> completePasskeyRegistration(
-        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
-        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
         @Valid @RequestBody CompletePasskeyRegistrationRequest request
     ) {
-        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
+        MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
 
         CompletePasskeyRegistrationResponse response = authenticatorService.completePasskeyRegistration(mautUser, request);
         return ResponseEntity.ok(response);
@@ -55,12 +55,11 @@ public class AuthenticatorController {
 
     @GetMapping("")
     public ResponseEntity<ListPasskeysResponse> listPasskeys(
-        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
-        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
         @RequestParam(defaultValue = "10") int limit,
         @RequestParam(defaultValue = "0") int offset
     ) {
-        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
+        MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
         
         ListPasskeysResponse response = authenticatorService.listPasskeys(mautUser, limit, offset);
         return ResponseEntity.ok(response);
@@ -68,11 +67,10 @@ public class AuthenticatorController {
 
     @DeleteMapping("/{passkeyId}")
     public ResponseEntity<Void> deletePasskey(
-        // TODO: MautUser needs to be resolved from mautSessionToken or similar MautUser-specific auth mechanism
-        /* @RequestHeader("X-Maut-Session-Token") String mautSessionToken, */
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
         @PathVariable String passkeyId
     ) {
-        MautUser mautUser = null; // Placeholder: Replace with actual MautUser resolved from its session/token
+        MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
 
         authenticatorService.deletePasskey(mautUser, passkeyId);
         return ResponseEntity.noContent().build();
