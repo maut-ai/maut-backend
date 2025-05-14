@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -208,6 +209,40 @@ public class GlobalExceptionHandler {
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handle MissingRequestHeaderException - when a required request header is not present.
+     *
+     * @param ex      the exception
+     * @param request the web request
+     * @return a ResponseEntity with appropriate 403 or 400 error message
+     */
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponseDto> handleMissingRequestHeaderException(
+            MissingRequestHeaderException ex, WebRequest request) {
+        log.warn("Missing request header: {} for path: {}", ex.getHeaderName(), request.getDescription(false));
+
+        String message;
+        HttpStatus status;
+
+        if ("X-Maut-Session-Token".equalsIgnoreCase(ex.getHeaderName())) {
+            message = "X-Maut-Session-Token Expected for this API";
+            status = HttpStatus.FORBIDDEN;
+            log.warn("X-Maut-Session-Token was missing, returning 403.");
+        } else {
+            message = "Required request header '" + ex.getHeaderName() + "' is not present.";
+            status = HttpStatus.BAD_REQUEST;
+            log.warn("Missing header '{}', returning 400.", ex.getHeaderName());
+        }
+
+        ErrorResponseDto errorResponse = ErrorResponseDto.builder()
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(errorResponse, status);
     }
 
     // Generic fallback handler for any other unhandled exceptions

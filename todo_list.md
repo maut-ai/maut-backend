@@ -85,5 +85,15 @@
 - [x] Run `bin/start_and_healthcheck.sh` to verify changes.
 - [x] Address any linting or startup errors.
 
+## Task: Return 403 if X-Maut-Session-Token is missing
+
+- [x] Identify `MissingRequestHeaderException` as the cause of the 500 error.
+- [x] Add a new handler in `GlobalExceptionHandler.java` for `MissingRequestHeaderException.class`.
+- [x] In the handler, check if `ex.getHeaderName()` is `"X-Maut-Session-Token"`.
+- [x] If it is, return HTTP 403 with message "X-Maut-Session-Token Expected for this API".
+- [x] Otherwise, return HTTP 400 for other missing headers.
+- [x] Run `bin/start_and_healthcheck.sh` to verify changes.
+- [x] Address any linting or startup errors.
+
 ## General Tasks
 - [x] Update API documentation in `docs/api_definitions.md` for `ClientApplicationController` new endpoints (Create, List, Get Details) and ensure correct placement.
