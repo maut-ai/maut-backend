@@ -98,6 +98,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
             .authorizeHttpRequests(authz -> authz
+                .mvcMatchers("/v1/session").permitAll()
                 .mvcMatchers("/v1/auth/**").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/v1/status").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/v1/hello").permitAll()
