@@ -97,10 +97,15 @@ public class SecurityConfig {
                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
-            .authorizeHttpRequests(authz -> authz
-                .mvcMatchers(HttpMethod.POST, "/v1/session").permitAll()
-                .mvcMatchers("/v1/auth/**").permitAll()
+            .authorizeHttpRequests(auth -> auth
+                .mvcMatchers("/v1/auth/login").permitAll() // For User (dashboard) login
+                .mvcMatchers("/v1/auth/register").permitAll() // For User (dashboard) registration
+                .mvcMatchers("/v1/auth/validate-token").permitAll() // For validating User (dashboard) token
+                .mvcMatchers("/v1/auth/client/**").permitAll() // For MautClient authentication (login, etc.)
+                .mvcMatchers(HttpMethod.POST, "/v1/session").permitAll() // For MautUser session creation
                 .mvcMatchers(HttpMethod.GET, "/v1/status").permitAll()
+                .mvcMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests for CORS preflight
+                .mvcMatchers("/v1/auth/**").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/v1/hello").permitAll()
                 .mvcMatchers("/v1/authenticator/**").permitAll() // Added for MautUser authentication
                 .mvcMatchers("/v1/wallets/**").permitAll()     // Added for MautUser authentication
