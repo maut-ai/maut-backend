@@ -6,6 +6,10 @@ import com.maut.core.modules.authenticator.dto.InitiatePasskeyRegistrationRespon
 import com.maut.core.modules.authenticator.dto.ListPasskeysResponse;
 import com.maut.core.modules.authenticator.dto.VerifyPasskeyAssertionRequest;
 import com.maut.core.modules.authenticator.dto.VerifyPasskeyAssertionResponse;
+import com.maut.core.modules.authenticator.dto.webauthn.InitiatePasskeyRegistrationServerRequestDto;
+import com.maut.core.modules.authenticator.dto.webauthn.PublicKeyCredentialCreationOptionsDto;
+import com.maut.core.modules.authenticator.dto.webauthn.CompletePasskeyRegistrationServerRequestDto;
+import com.maut.core.modules.authenticator.dto.webauthn.PasskeyRegistrationResultDto;
 import com.maut.core.modules.user.model.MautUser;
 
 public interface AuthenticatorService {
@@ -70,4 +74,41 @@ public interface AuthenticatorService {
      * @throws com.maut.core.common.exception.AuthenticationException if the passkey verification fails due to mismatched user or other auth reasons.
      */
     VerifyPasskeyAssertionResponse verifyPasskeyAssertion(MautUser mautUser, VerifyPasskeyAssertionRequest request);
+
+    // --- Vanilla WebAuthn Passkey Registration Methods (without Turnkey) ---
+
+    /**
+     * Initiates the "vanilla" WebAuthn passkey registration process for the given MautUser,
+     * generating PublicKeyCredentialCreationOptions to be sent to the client.
+     * This method does NOT involve Turnkey.
+     *
+     * @param mautUser The MautUser for whom passkey registration is being initiated. Must not be null.
+     * @param requestDto Optional DTO containing client preferences like authenticator attachment. Can be null or empty.
+     * @return PublicKeyCredentialCreationOptionsDto to be sent to the client to trigger navigator.credentials.create().
+     * @throws com.maut.core.common.exception.InvalidRequestException if required parameters are missing or invalid.
+     * @throws com.maut.core.common.exception.MautException for other underlying errors.
+     */
+    PublicKeyCredentialCreationOptionsDto initiateVanillaPasskeyRegistration(
+            MautUser mautUser,
+            InitiatePasskeyRegistrationServerRequestDto requestDto
+    );
+
+    /**
+     * Completes the "vanilla" WebAuthn passkey registration process for the given MautUser
+     * using the authenticator's attestation response.
+     * This method verifies the attestation and, if successful, creates and stores a new WebAuthn credential.
+     * This method does NOT involve Turnkey.
+     *
+     * @param mautUser The MautUser for whom passkey registration is being completed. Must not be null.
+     * @param requestDto The DTO containing the client's attestation response (PublicKeyCredential).
+     * @return PasskeyRegistrationResultDto indicating the outcome of the registration attempt.
+     * @throws com.maut.core.common.exception.InvalidRequestException if the attestation data is invalid or registration fails for validation reasons.
+     * @throws com.maut.core.common.exception.MautException for other underlying errors or persistence issues.
+     */
+    PasskeyRegistrationResultDto completeVanillaPasskeyRegistration(
+            MautUser mautUser,
+            CompletePasskeyRegistrationServerRequestDto requestDto
+    );
+
+    // Passkey Authentication (Vanilla WebAuthn)
 }

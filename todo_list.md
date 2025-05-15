@@ -89,6 +89,42 @@
 ## Phase 3: Other Core Features (Placeholder)
 - ... (Details TBD) ...
 
+## Vanilla WebAuthn Passkey Enrollment (Epic)
+
+- [x] **Task 20: Add WebAuthn4J Maven Dependency**
+  - Add `com.webauthn4j:webauthn4j-spring-security-core` to `pom.xml`.
+- [x] **Task 21: Configure WebAuthn Settings**
+  - Add `webauthn` configuration block to `src/main/resources/config/application-config.json` as per `docs/design/passkey_apis.md`.
+- [x] **Task 22: Create WebAuthn Database Migrations**
+  - Create Flyway migration scripts for `webauthn_registration_challenges` and `maut_user_webauthn_credentials` tables using `bin/create_migration.sh`.
+  - Define table structures as per `docs/design/passkey_apis.md` (using UUIDs).
+  - Ensure `uuid-ossp` or `gen_random_uuid()` is available/used for UUID generation.
+  - Update `application.yml` to include the new migration script location if necessary (e.g., `classpath:db/modules/authenticator`).
+- [x] **Task 23: Implement WebAuthn DTOs**
+  - Create new DTOs in `com.maut.core.modules.authenticator.dto.webauthn`:
+    - `InitiatePasskeyRegistrationServerRequestDto`
+    - `PublicKeyCredentialCreationOptionsDto`
+    - `CompletePasskeyRegistrationServerRequestDto`
+    - `PasskeyRegistrationResultDto`
+- [x] **Task 24: Implement WebAuthn Service Logic**
+  - Update `AuthenticatorService` interface and `AuthenticatorServiceImpl`.
+  - [x] Implement logic for `initiatePasskeyRegistration` using WebAuthn4J:
+    - [x] Generate and store challenge in `webauthn_registration_challenges`.
+    - [x] Construct and return `PublicKeyCredentialCreationOptionsDto`.
+    - [x] Ensure `MautUser.id` (UUID) is correctly handled and Base64URL encoded for `user.id` in `PublicKeyCredentialCreationOptionsDto`.
+    - [x] Refactor AuthenticatorSelectionCriteria logic based on client preferences or sensible defaults.
+    - [x] **FIXED:** Ensure ApplicationConfig is correctly loading WebAuthn properties and accessible in AuthenticatorServiceImpl.
+  - [ ] Implement logic for `completePasskeyRegistration` using WebAuthn4J:
+    - [ ] Retrieve and validate challenge.
+    - [ ] Verify attestation data and client data using WebAuthn4J.
+    - [ ] Store new credential in `maut_user_webauthn_credentials`.
+    - [ ] Delete used challenge.
+- [ ] **Task 25: Update AuthenticatorController for WebAuthn**
+  - Modify `AuthenticatorController` endpoints (`/initiate-passkey-registration`, `/complete-passkey-registration`) to use the new DTOs and service methods for vanilla WebAuthn.
+- [ ] **Task 26: Test Vanilla WebAuthn Enrollment**
+  - Run `bin/start_and_healthcheck.sh`.
+  - Perform manual testing of the enrollment flow if possible, or write integration tests.
+
 ## Bugs / Issues to Address:
 - (None currently identified after recent fixes)
 
@@ -113,3 +149,16 @@
 
 ### Future / Backlog
 - [ ] Investigate and resolve Turnkey authentication and sub-organization creation issues.
+
+### Fixing Passkey Registration Errors
+- [X] **Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`**
+  - [X] Address unresolved types: `AuthenticatorData`, `RegistrationEmulationParameters`, `ValidationException`, `PublicKeyCredentialParameters` (Resolved by successful application startup).
+  - [X] Address undefined constructor: `CborConverter()` (Resolved by successful application startup, `ObjectConverter` is now injected).
+  - [X] Address undefined methods: `getAuthenticatorData()`, `getCredentialPublicKey()`, `getAttestationType()` (Resolved by successful application startup).
+  - [X] **Current Status (User Investigating):** Paused for USER to investigate `pom.xml` for WebAuthn4J dependency issues and ensure IDE classpath is synchronized. These are the likely root cause of the persistent type resolution errors.
+  - [X] Verify `pom.xml` for correct WebAuthn4J dependencies and versions.
+  - [X] Refresh and rebuild the project to ensure the IDE recognizes all dependencies.
+- [X] **Run `bin/start_and_healthcheck.sh` and fix any linting or startup errors.**
+  - [X] Create `WebAuthnConfiguration.java` to define `ObjectConverter` and `WebAuthnManager` beans.
+  - [X] Modify `AuthenticatorServiceImpl` to inject and use `ObjectConverter` bean.
+  - [X] Re-run `bin/start_and_healthcheck.sh` to verify fix and check for further errors. (Successfully completed)
