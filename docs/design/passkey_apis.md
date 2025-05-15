@@ -168,5 +168,5 @@ To be added to `src/main/resources/config/application-config.json`:
 
 ## 6. Recommended Library
 
-*   **WebAuthn4J** (`com.webauthn4j:webauthn4j-core`, `com.webauthn4j:webauthn4j-util`): For handling complex WebAuthn parsing, validation, and object creation.
+*   **WebAuthn4J-spring-security** (`https://github.com/webauthn4j/webauthn4j-spring-security?tab=readme-ov-file`): For handling complex WebAuthn parsing, validation, and object creation. API Reference: https://webauthn4j.github.io/webauthn4j-spring-security/en/
 
