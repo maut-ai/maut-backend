@@ -109,7 +109,8 @@ public class SecurityConfig {
                 .mvcMatchers("/v1/auth/**").permitAll() // For Maut dashboard user authentication
                 .mvcMatchers("/v1/status").permitAll()
                 .mvcMatchers("/v1/users/**").authenticated() // Secure MautUser listing endpoint
-                .mvcMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+                .mvcMatchers("/v1/authenticator/**").permitAll() // Added for MautUser authentication
+                .mvcMatchers("/v1/wallets/**").permitAll()     // Added for MautUser authentication
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
