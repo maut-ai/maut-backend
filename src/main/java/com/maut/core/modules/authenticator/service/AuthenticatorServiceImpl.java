@@ -24,7 +24,6 @@ import com.maut.core.modules.authenticator.model.WebauthnRegistrationChallenge;
 import com.maut.core.modules.authenticator.repository.UserAuthenticatorRepository;
 import com.maut.core.modules.authenticator.repository.WebauthnRegistrationChallengeRepository;
 import com.maut.core.modules.user.model.MautUser;
-import com.maut.core.modules.user.repository.MautUserRepository;
 import com.maut.core.modules.wallet.model.UserWallet;
 import com.maut.core.modules.wallet.repository.UserWalletRepository;
 import com.maut.core.integration.turnkey.TurnkeyClient;
@@ -40,6 +39,7 @@ import com.webauthn4j.data.*;
 import com.webauthn4j.data.attestation.authenticator.AAGUID;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
+import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import com.webauthn4j.data.client.CollectedClientData;
@@ -57,12 +57,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.maut.core.modules.authenticator.model.MautUserWebauthnCredential;
@@ -76,18 +74,17 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 public class AuthenticatorServiceImpl implements AuthenticatorService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticatorServiceImpl.class);
+
     private final UserAuthenticatorRepository userAuthenticatorRepository;
-    private final MautUserRepository mautUserRepository;
     private final UserWalletRepository userWalletRepository;
-    private final TurnkeyClient turnkeyClient;
-    private final ObjectMapper objectMapper;
-    private final ApplicationConfig applicationConfig;
-    private final WebauthnRegistrationChallengeRepository challengeRepository;
-    private final MautUserWebauthnCredentialRepository credentialRepository;
     private final WebAuthnManager webAuthnManager;
     private final ObjectConverter objectConverter;
-
-    private static final Logger logger = LoggerFactory.getLogger(AuthenticatorServiceImpl.class);
+    private final ObjectMapper objectMapper;
+    private final MautUserWebauthnCredentialRepository credentialRepository;
+    private final TurnkeyClient turnkeyClient;
+    private final ApplicationConfig applicationConfig;
+    private final WebauthnRegistrationChallengeRepository challengeRepository;
 
     @Override
     public InitiatePasskeyRegistrationResponse initiatePasskeyRegistration(MautUser mautUser) {
@@ -97,7 +94,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         }
         log.info("Initiating passkey registration for MautUser ID: {}", mautUser.getId());
 
-        // 1. Find the user's wallet to get the Turnkey Sub-Organization ID
         UserWallet userWallet = userWalletRepository.findByMautUser(mautUser)
             .stream().findFirst()
             .orElseThrow(() -> {
@@ -119,7 +115,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
         TurnkeyInitiatePasskeyRegistrationResponse turnkeyResponse = turnkeyClient.initiatePasskeyRegistration(turnkeyRequest);
 
-        // Ensure Turnkey response is valid
         if (turnkeyResponse == null) {
             log.error("TurnkeyClient returned null response for MautUser ID: {}", mautUser.getId());
             throw new AuthenticationException("Failed to initiate passkey registration with Turnkey: No response.");
@@ -149,7 +144,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             log.error("MautUser cannot be null for completing passkey registration.");
             throw new IllegalArgumentException("Authenticated MautUser is required for completing passkey registration.");
         }
-        // Validate new fields in the request
         if (request == null || 
             request.getTurnkeyAttestation() == null || request.getTurnkeyAttestation().isEmpty() ||
             request.getTurnkeyChallenge() == null || request.getTurnkeyChallenge().isBlank() ||
@@ -159,7 +153,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         }
         log.info("Completing passkey registration for MautUser ID: {}", mautUser.getId());
 
-        // 1. Find the user's wallet to get the Turnkey Sub-Organization ID
         UserWallet userWallet = userWalletRepository.findByMautUser(mautUser)
             .stream().findFirst()
             .orElseThrow(() -> {
@@ -173,14 +166,11 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new IllegalStateException("User wallet is missing Turnkey Sub-Organization ID.");
         }
 
-        // 2. Serialize turnkeyAttestation (PublicKeyCredential) to JSON string for Turnkey
         String attestationJson;
-        String externalCredentialId; // This is the WebAuthn credential ID
+        String externalCredentialId;
         try {
             attestationJson = objectMapper.writeValueAsString(request.getTurnkeyAttestation());
-            // Extract the external credential ID (WebAuthn rawId or id)
-            // The PublicKeyCredential structure typically has an 'id' field (Base64URL encoded string)
-            Object rawIdObject = request.getTurnkeyAttestation().get("rawId"); // Prefer rawId if available
+            Object rawIdObject = request.getTurnkeyAttestation().get("rawId");
             if (rawIdObject == null) {
                  rawIdObject = request.getTurnkeyAttestation().get("id");
             }
@@ -194,16 +184,14 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new AuthenticationException("Error processing attestation data.", e);
         }
 
-        // 3. Prepare request for Turnkey's finalizePasskeyRegistration
         TurnkeyFinalizePasskeyRegistrationRequest turnkeyRequest = TurnkeyFinalizePasskeyRegistrationRequest.builder()
                 .turnkeySubOrganizationId(turnkeySubOrganizationId)
-                .registrationContextId(request.getTurnkeyChallenge()) // Using challenge as context
+                .registrationContextId(request.getTurnkeyChallenge())
                 .attestation(attestationJson)
                 .clientDataJSON(request.getClientDataJSON())
                 .transports(request.getTransports())
                 .build();
 
-        // 4. Call Turnkey client
         TurnkeyFinalizePasskeyRegistrationResponse turnkeyResponse;
         try {
             turnkeyResponse = turnkeyClient.finalizePasskeyRegistration(turnkeyRequest);
@@ -212,7 +200,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new AuthenticationException("Failed to communicate with Turnkey to finalize passkey registration.", e);
         }
 
-        // 5. Process Turnkey response
         if (turnkeyResponse == null || !turnkeyResponse.isSuccess()) {
             String errorMessage = (turnkeyResponse != null && turnkeyResponse.getErrorMessage() != null) ? 
                                   turnkeyResponse.getErrorMessage() : "Unknown error from Turnkey.";
@@ -226,12 +213,11 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new AuthenticationException("Invalid response from Turnkey: missing authenticator ID.");
         }
 
-        // 6. Create and save UserAuthenticator entity
         UserAuthenticator userAuthenticator = new UserAuthenticator();
         userAuthenticator.setMautUser(mautUser);
         userAuthenticator.setAuthenticatorType(AuthenticatorType.PASSKEY);
-        userAuthenticator.setTurnkeyAuthenticatorId(turnkeyAuthenticatorId); // From Turnkey response
-        userAuthenticator.setExternalAuthenticatorId(externalCredentialId); // Extracted WebAuthn credential ID
+        userAuthenticator.setTurnkeyAuthenticatorId(turnkeyAuthenticatorId);
+        userAuthenticator.setExternalAuthenticatorId(externalCredentialId);
         userAuthenticator.setAuthenticatorName(request.getAuthenticatorName() != null ? request.getAuthenticatorName() : "Passkey");
         userAuthenticator.setEnabled(true);
 
@@ -239,7 +225,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         log.info("New UserAuthenticator ID: {} created for MautUser ID: {}. TurnkeyAuthenticatorID: {}", 
                  savedAuthenticator.getId(), mautUser.getId(), turnkeyAuthenticatorId);
 
-        // 7. Return service response
         return CompletePasskeyRegistrationResponse.builder()
                 .authenticatorId(savedAuthenticator.getId().toString())
                 .status("SUCCESS")
@@ -252,34 +237,13 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             log.error("MautUser cannot be null for listing passkeys.");
             throw new IllegalArgumentException("Authenticated MautUser is required to list passkeys.");
         }
-        if (limit <= 0) limit = 10; // Default limit
-        if (offset < 0) offset = 0;   // Default offset
+        if (limit <= 0) limit = 10; 
+        if (offset < 0) offset = 0;   
 
         log.info("Listing passkeys for MautUser ID: {}, limit: {}, offset: {}", 
             mautUser.getId(), limit, offset
         );
 
-        // --- Placeholder for actual data fetching --- //
-        // This would typically involve querying the UserAuthenticatorRepository
-        // Pageable pageable = PageRequest.of(offset / limit, limit, Sort.by("createdAt").descending());
-        // Page<UserAuthenticator> authenticatorPage = userAuthenticatorRepository.findByMautUser(mautUser, pageable);
-
-        // java.util.List<PasskeyListItem> passkeyItems = authenticatorPage.getContent().stream()
-        //     .map(auth -> PasskeyListItem.builder()
-        //         .id(auth.getId().toString())
-        //         .name(auth.getName()) // Assuming UserAuthenticator has a 'name' field
-        //         .credentialId(auth.getTurnkeyAuthenticatorId()) // Or a specific credential ID field if separate
-        //         .createdAt(auth.getCreatedAt())
-        //         .lastUsedAt(auth.getLastUsedAt()) // Assuming UserAuthenticator has this
-        //         .type(auth.getType() != null ? auth.getType().name() : "UNKNOWN")
-        //         .enabled(auth.isEnabled())
-        //         .build())
-        //     .collect(Collectors.toList());
-        // long totalPasskeys = authenticatorPage.getTotalElements();
-        // --- End Placeholder --- //
-
-        // For now, returning placeholder data
-        log.warn("Database query for passkeys not yet implemented. Simulating list passkeys for MautUser ID: {}", mautUser.getId());
         java.util.List<PasskeyListItem> placeholderPasskeys = new java.util.ArrayList<>();
         java.time.Instant now = java.time.Instant.now();
 
@@ -287,8 +251,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             .id(java.util.UUID.randomUUID().toString())
             .name("MacBook Pro Touch ID")
             .credentialId("cred_id_" + java.util.UUID.randomUUID().toString().substring(0,12))
-            .createdAt(now.minusSeconds(86400 * 30)) // 30 days ago
-            .lastUsedAt(now.minusSeconds(3600)) // 1 hour ago
+            .createdAt(now.minusSeconds(86400 * 30)) 
+            .lastUsedAt(now.minusSeconds(3600)) 
             .type("PLATFORM")
             .enabled(true)
             .build());
@@ -298,8 +262,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 .id(java.util.UUID.randomUUID().toString())
                 .name("YubiKey 5C")
                 .credentialId("cred_id_" + java.util.UUID.randomUUID().toString().substring(0,12))
-                .createdAt(now.minusSeconds(86400 * 10)) // 10 days ago
-                .lastUsedAt(now.minusSeconds(86400 * 2)) // 2 days ago
+                .createdAt(now.minusSeconds(86400 * 10)) 
+                .lastUsedAt(now.minusSeconds(86400 * 2)) 
                 .type("CROSS_PLATFORM")
                 .enabled(true)
                 .build());
@@ -314,7 +278,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             .passkeys(paginatedPasskeys)
             .limit(limit)
             .offset(offset)
-            .totalPasskeys(placeholderPasskeys.size()) // In real scenario, this would be total count from DB query
+            .totalPasskeys(placeholderPasskeys.size()) 
             .build();
     }
 
@@ -331,20 +295,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
         log.info("Attempting to delete passkey with ID: {} for MautUser ID: {}", passkeyId, mautUser.getId());
 
-        // --- Placeholder for actual data deletion --- //
-        // This would typically involve:
-        // 1. Finding the UserAuthenticator entity by passkeyId and mautUser.
-        //    UserAuthenticator authenticator = userAuthenticatorRepository.findByIdAndMautUser(UUID.fromString(passkeyId), mautUser)
-        //        .orElseThrow(() -> new com.maut.core.common.exception.ResourceNotFoundException("Passkey not found with id: " + passkeyId));
-        // 2. Verifying ownership (implicitly done by querying with MautUser).
-        // 3. Deleting the entity from the repository.
-        //    userAuthenticatorRepository.delete(authenticator);
-        // 4. Optionally, coordinating with Turnkey to de-register/delete the passkey there if necessary.
-        //    log.info("Passkey {} for user {} would be deleted from Turnkey here.", passkeyId, mautUser.getId());
-        // --- End Placeholder --- //
-
         log.warn("Passkey deletion not yet fully implemented. Simulating deletion for passkey ID: {} for MautUser ID: {}", passkeyId, mautUser.getId());
-        // No actual operation performed in placeholder.
     }
 
     @Override
@@ -357,7 +308,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             log.error("Passkey Credential ID is required for assertion verification.");
             throw new InvalidRequestException("Passkey Credential ID is required.");
         }
-        // Expecting turnkeyAssertion to be a map containing clientDataJSON, authenticatorData, signature, originalChallenge etc.
         if (request.getTurnkeyAssertion() == null || request.getTurnkeyAssertion().isEmpty()) {
             log.error("Turnkey Assertion data (Map) is required for assertion verification.");
             throw new InvalidRequestException("Turnkey Assertion data (Map) is required.");
@@ -367,7 +317,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         log.info("Attempting to verify passkey assertion for Maut external credential ID: {}", credentialId);
 
         UserAuthenticator userAuthenticator = findAndValidateUserAuthenticator(mautUser, credentialId);
-        MautUser identifiedUser = userAuthenticator.getMautUser(); // User identified by the passkey
+        MautUser identifiedUser = userAuthenticator.getMautUser(); 
 
         UserWallet userWallet = userWalletRepository.findByMautUser(identifiedUser)
             .stream().findFirst()
@@ -386,10 +336,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         String clientDataJSON = (String) assertionMap.get("clientDataJSON");
         String authenticatorData = (String) assertionMap.get("authenticatorData");
         String signature = (String) assertionMap.get("signature");
-        String originalChallenge = (String) assertionMap.get("challenge"); // Assuming 'challenge' is the key for originalChallenge
-        // The 'assertion' field for TurnkeyVerifyAssertionRequest might be the whole assertionMap as JSON
-        // or a specific part of it. For now, let's assume the entire map should be sent if Turnkey expects a generic JSON object.
-        // If Turnkey expects specific fields, we might need to adjust this or the TurnkeyVerifyAssertionRequest DTO.
+        String originalChallenge = (String) assertionMap.get("challenge"); 
 
         String assertionJsonString;
         try {
@@ -401,8 +348,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
         TurnkeyVerifyAssertionRequest turnkeyRequest = TurnkeyVerifyAssertionRequest.builder()
                 .turnkeySubOrganizationId(turnkeySubOrganizationId)
-                .passkeyCredentialId(userAuthenticator.getExternalAuthenticatorId()) // Use external ID for Turnkey
-                .assertion(assertionJsonString) // Sending the whole map as JSON string
+                .passkeyCredentialId(userAuthenticator.getExternalAuthenticatorId()) 
+                .assertion(assertionJsonString) 
                 .clientDataJSON(clientDataJSON)
                 .authenticatorData(authenticatorData)
                 .signature(signature)
@@ -438,9 +385,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
         } catch (TurnkeyOperationException e) {
             log.error("Turnkey operation error during assertion verification for MautUser ID: {}: {}", identifiedUser.getId(), e.getMessage(), e);
-            // Potentially map specific Turnkey exceptions to more user-friendly messages or specific Maut exceptions
             throw new AuthenticationException("Passkey verification failed due to a Turnkey operation error: " + e.getMessage(), e);
-        } catch (Exception e) { // Catch other unexpected exceptions
+        } catch (Exception e) { 
             log.error("Unexpected error during Turnkey assertion verification for MautUser ID: {}: {}", identifiedUser.getId(), e.getMessage(), e);
             throw new AuthenticationException("An unexpected error occurred during passkey verification.", e);
         }
@@ -463,17 +409,12 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             throw new RuntimeException("Server configuration error for WebAuthn.");
         }
 
-        // 1. Relying Party (RP) Configuration
         String rpId = webAuthnConfig.getRelyingPartyId();
         String rpName = webAuthnConfig.getRelyingPartyName();
-        // Origins will be checked by WebAuthn4J during completion against the actual origin of the request.
 
-        // 2. User Configuration
-        // User handle MUST be the MautUser's ID (UUID) as bytes. It should NOT be an email or username.
-        // This is critical for linking the credential back to the MautUser.
         byte[] userHandle = mautUser.getId().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        String userName = mautUser.getClientSystemUserId(); // Or a more suitable unique name within the client app
-        String userDisplayName = mautUser.getClientSystemUserId(); // Or a more friendly display name
+        String userName = mautUser.getClientSystemUserId(); 
+        String userDisplayName = mautUser.getClientSystemUserId(); 
 
         PublicKeyCredentialUserEntity userEntity = new PublicKeyCredentialUserEntity(
                 userHandle,
@@ -481,17 +422,14 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 userDisplayName
         );
 
-        // 3. Challenge
-        Challenge challenge = new DefaultChallenge(); // Generates a cryptographically secure random challenge
+        Challenge challenge = new DefaultChallenge(); 
 
-        // 4. PublicKeyCredentialParameters (algorithms supported by RP)
         List<PublicKeyCredentialParameters> pubKeyCredParams = List.of(
-                new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.ES256), // ECDSA with SHA-256
-                new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.RS256)  // RSA with SHA-256
+                new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.ES256), 
+                new PublicKeyCredentialParameters(PublicKeyCredentialType.PUBLIC_KEY, COSEAlgorithmIdentifier.RS256)  
                 // Potentially add more algorithms like Ed25519 (EdDSA) if supported by clients and server
         );
 
-        // 5. Authenticator Selection Criteria (optional, based on requestDto or defaults)
         AuthenticatorSelectionCriteria authenticatorSelection = null;
         log.debug("Evaluating authenticator attachment preference. RequestDto: {}", requestDto);
         if (requestDto != null && requestDto.getAuthenticatorAttachmentPreference() != null) {
@@ -504,18 +442,12 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             if (attachment != null) {
                  authenticatorSelection = new AuthenticatorSelectionCriteria(
                     attachment,
-                    ResidentKeyRequirement.PREFERRED, // residentKeyRequirement - using null for default or not specified
-                    UserVerificationRequirement.PREFERRED // userVerificationRequirement - using null for default or not specified
+                    ResidentKeyRequirement.PREFERRED, 
+                    UserVerificationRequirement.PREFERRED 
                  );
-                 // Example of more specific settings:
-                 // authenticatorSelection = new AuthenticatorSelectionCriteria(
-                 //    attachment,
-                 //    ,
-                 //    UserVerificationRequirement.PREFERRED
-                 // );
             }
         }
-        if (authenticatorSelection == null) { // Default if not specified or invalid
+        if (authenticatorSelection == null) { 
             log.info("AuthenticatorSelectionCriteria is null. Applying default: Platform authenticator, ResidentKey discouraged, UserVerification preferred.");
             authenticatorSelection = new AuthenticatorSelectionCriteria(
                 AuthenticatorAttachment.PLATFORM, 
@@ -524,36 +456,28 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             );
         }
 
-        // 6. Attestation Conveyance Preference (how much attestation information the RP wants)
-        // "none" is simplest and often recommended for privacy unless specific attestation is required.
         AttestationConveyancePreference attestationPreference = AttestationConveyancePreference.NONE;
 
-        // 7. Exclude Credentials (optional, to prevent re-registration of existing credentials)
-        // List<PublicKeyCredentialDescriptor> excludeCredentialsList = getExistingCredentialsForUser(mautUser);
-        // For now, we'll keep this empty. This can be an enhancement.
         List<PublicKeyCredentialDescriptor> excludeCredentialsList = List.of();
 
-        // Build the options for the server to create PublicKeyCredentialCreationOptions
         PublicKeyCredentialCreationOptions pkcco;
         try {
             pkcco = new PublicKeyCredentialCreationOptions(
-                new PublicKeyCredentialRpEntity(rpId, rpName), // Changed to RelyingPartyEntity
+                new PublicKeyCredentialRpEntity(rpId, rpName), 
                 userEntity,
                 challenge,
                 pubKeyCredParams,
-                webAuthnConfig.getRegistrationTimeoutMs() != null ? webAuthnConfig.getRegistrationTimeoutMs() : 60000L, // Timeout in ms
+                webAuthnConfig.getRegistrationTimeoutMs() != null ? webAuthnConfig.getRegistrationTimeoutMs() : 60000L, 
                 excludeCredentialsList,
                 authenticatorSelection,
                 attestationPreference,
-                null // extensions can be null
+                null 
             );
         } catch (Exception e) {
             log.error("Error creating PublicKeyCredentialCreationOptions with WebAuthn4J for MautUser ID {}: {}", mautUser.getId(), e.getMessage(), e);
             throw new RuntimeException("Server error while preparing passkey registration options.", e);
         }
 
-        // 8. Store the challenge for later verification during completion
-        // The challenge in pkcco is a Challenge object; we need its Base64URL string value.
         String challengeString = Base64UrlUtil.encodeToString(pkcco.getChallenge().getValue());
         OffsetDateTime expiresAt = OffsetDateTime.now().plusSeconds( (pkcco.getTimeout() != null ? pkcco.getTimeout() : 60000L) / 1000 );
 
@@ -566,7 +490,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         challengeRepository.save(registrationChallenge);
         log.info("Stored WebAuthn registration challenge ID {} for MautUser ID {}. Expires at: {}", registrationChallenge.getId(), mautUser.getId(), expiresAt);
 
-        // 9. Map WebAuthn4J's PublicKeyCredentialCreationOptions to our DTO
         return mapWebAuthn4JOptionsToDto(pkcco);
     }
 
@@ -583,19 +506,11 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         }
 
         try {
-            // 1. Decode the request data from Base64URL format
-            if (requestDto == null || requestDto.getResponse() == null) {
-                logger.warn("Invalid request data: response object is null for MautUser: {}", mautUser.getId());
-                return PasskeyRegistrationResultDto.builder().success(false).message("Invalid request data.").build();
-            }
-
             final byte[] clientDataJSONBytes = Base64UrlUtil.decode(requestDto.getResponse().getClientDataJSON());
             final byte[] attestationObjectBytes = Base64UrlUtil.decode(requestDto.getResponse().getAttestationObject());
             
-            // 2. Parse the clientDataJSON to get the challenge
             final CollectedClientData clientData;
             try {
-                // Convert byte array to string as needed for the JSON parser
                 String clientDataJson = new String(clientDataJSONBytes, java.nio.charset.StandardCharsets.UTF_8);
                 clientData = this.objectConverter.getJsonConverter().readValue(clientDataJson, CollectedClientData.class);
                 if (clientData == null || clientData.getChallenge() == null) {
@@ -607,10 +522,8 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 return PasskeyRegistrationResultDto.builder().success(false).message("Invalid client data format.").build();
             }
             
-            // Extract challenge as a Base64URL-encoded string (how it's stored in the database)
             final String challengeBase64 = Base64UrlUtil.encodeToString(clientData.getChallenge().getValue());
             
-            // 3. Retrieve and validate the stored challenge
             final Optional<WebauthnRegistrationChallenge> challengeOpt = challengeRepository
                 .findByMautUserAndChallengeAndExpiresAtAfter(mautUser, challengeBase64, OffsetDateTime.now());
                 
@@ -620,9 +533,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             }
             
             final WebauthnRegistrationChallenge storedChallenge = challengeOpt.get();
-
-            // 4. Verify the WebAuthn registration data
-            final Challenge challengeFromStorage = new DefaultChallenge(storedChallenge.getChallenge());
 
             final ApplicationConfig.WebAuthnConfig rpConfig = applicationConfig.getWebauthn();
             final Set<Origin> origins = rpConfig.getRelyingPartyOrigins().stream()
@@ -636,11 +546,10 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             final ServerProperty serverProperty = new ServerProperty(
                 origins, 
                 rpConfig.getRelyingPartyId(), 
-                challengeFromStorage, 
-                null // tokenBindingId not used
+                new DefaultChallenge(storedChallenge.getChallenge()), 
+                null 
             );
 
-            // Create proper emulation parameters (allowing self attestation and skipping attestation statement verification if needed)
             final boolean skipAttestationVerification = Boolean.TRUE.equals(rpConfig.isSkipAttestationVerification());
             final RegistrationRequest registrationRequest = new RegistrationRequest(
                 attestationObjectBytes,
@@ -650,7 +559,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             final RegistrationParameters registrationParameters = new RegistrationParameters(
                 serverProperty,
                 skipAttestationVerification,
-                true // Support for self attestation
+                true 
             );
 
             logger.debug("Validating WebAuthn registration request for MautUser: {} with RP ID: {}", mautUser.getId(), rpConfig.getRelyingPartyId());
@@ -659,7 +568,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             try {
                 registrationData = webAuthnManager.parse(registrationRequest);
                 
-                // Validate the registration data
                 webAuthnManager.validate(registrationData, registrationParameters);
                 logger.info("WebAuthn registration validation successful for MautUser: {}", mautUser.getId());
             } catch (VerificationException e) {
@@ -667,7 +575,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 return PasskeyRegistrationResultDto.builder().success(false).message("Passkey validation failed: " + e.getMessage()).build();
             }
 
-            // 5. Extract credential data
             final AuthenticatorData authenticatorData = registrationData.getAttestationObject().getAuthenticatorData();
             final AttestedCredentialData attestedCredentialData = authenticatorData.getAttestedCredentialData(); 
             if (attestedCredentialData == null) {
@@ -677,72 +584,54 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
 
             final String credentialIdBase64 = Base64UrlUtil.encodeToString(attestedCredentialData.getCredentialId());
             
-            // Check if this credential ID already exists
             if (credentialRepository.findByExternalId(credentialIdBase64).isPresent()) {
                 logger.warn("Credential ID already exists: {} for MautUser: {}", credentialIdBase64, mautUser.getId());
                 return PasskeyRegistrationResultDto.builder().success(false).message("This credential has already been registered.").build();
             }
             
-            // 6. Get COSE public key in correct format
-            final byte[] publicKeyCoseBytes;
-            try {
-                // Use the object converter directly to encode the public key
-                publicKeyCoseBytes = this.objectConverter.getCborConverter().writeValueAsBytes(
-                    attestedCredentialData.getCOSEKey().getPublicKey()
-                );
-            } catch (Exception e) {
-                logger.error("Failed to encode COSE public key for MautUser: {}: {}", mautUser.getId(), e.getMessage(), e);
-                return PasskeyRegistrationResultDto.builder().success(false).message("Failed to process credential data.").build();
+            COSEKey coseKey = authenticatorData.getAttestedCredentialData().getCOSEKey();
+            if (coseKey == null) {
+                logger.error("COSEKey is null in AttestedCredentialData for mautUserId: {}", mautUser.getId());
+                throw new InvalidRequestException("COSEKey is missing from authenticator response.");
             }
 
-            // 7. Store the new credential
+            byte[] coseKeyBytes = objectConverter.getCborConverter().writeValueAsBytes(coseKey);
+
+            String credentialIdString = Base64UrlUtil.encodeToString(authenticatorData.getAttestedCredentialData().getCredentialId());
+            logger.info("Successfully processed passkey registration for mautUserId: {}. Credential ID: {}", mautUser.getId(), credentialIdString);
+            
             final MautUserWebauthnCredential newCredential = new MautUserWebauthnCredential();
             newCredential.setMautUser(mautUser);
-            newCredential.setExternalId(credentialIdBase64); 
-            newCredential.setPublicKeyCose(publicKeyCoseBytes); 
+            newCredential.setExternalId(credentialIdString); 
+            newCredential.setPublicKeyCose(coseKeyBytes); 
             newCredential.setSignatureCounter(authenticatorData.getSignCount());
             
-            // Set attestation type if available
             final AttestationStatement attestationStatement = registrationData.getAttestationObject().getAttestationStatement();
             if (attestationStatement != null) {
                 newCredential.setAttestationType(registrationData.getAttestationObject().getFormat());
             }
             
-            // Set AAGUID if available
             final AAGUID aaguid = attestedCredentialData.getAaguid();
             if (aaguid != null && !aaguid.equals(AAGUID.ZERO)) {
                 newCredential.setAaguid(aaguid.toString());
             }
 
-            // Set transports if available
-//            final Set<AuthenticatorTransport> transports = authenticatorData.getTransports(); // TODO
-            final Set<AuthenticatorTransport> transports = null;
-            if (transports != null && !transports.isEmpty()) { 
-                newCredential.setTransports(transports.stream()
-                    .map(AuthenticatorTransport::getValue)
-                    .collect(Collectors.toList()));
-            }
-            
-            // 8. Set friendly name (use from request if provided, otherwise generate one)
-            String friendlyName = "Passkey-" + Instant.now().toString().substring(0, 10); // Example: Passkey-2023-10-27
+            String friendlyName = "Passkey-" + Instant.now().toString().substring(0, 10); 
             newCredential.setFriendlyName(friendlyName);
             
-            // 9. Set timestamps
             final OffsetDateTime now = OffsetDateTime.now();
             newCredential.setCreatedAt(now); 
             newCredential.setLastUsedAt(now);
 
-            // 10. Save the new credential and cleanup
             credentialRepository.save(newCredential);
-            logger.info("New WebAuthn credential {} stored for MautUser: {}", credentialIdBase64, mautUser.getId());
+            logger.info("New WebAuthn credential {} stored for MautUser: {}", credentialIdString, mautUser.getId());
 
             challengeRepository.delete(storedChallenge);
             logger.debug("Used challenge {} deleted for MautUser: {}", storedChallenge.getId(), mautUser.getId());
 
-            // 11. Return success result
             return PasskeyRegistrationResultDto.builder()
                     .success(true)
-                    .credentialId(credentialIdBase64)
+                    .credentialId(credentialIdString)
                     .friendlyName(newCredential.getFriendlyName())
                     .createdAt(now.toString())
                     .message("Passkey registration successful.")
@@ -761,7 +650,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 .build();
 
         PublicKeyCredentialCreationOptionsDto.UserDto userDto = PublicKeyCredentialCreationOptionsDto.UserDto.builder()
-                .id(Base64UrlUtil.encodeToString(options.getUser().getId())) // User handle (MautUser.id bytes)
+                .id(Base64UrlUtil.encodeToString(options.getUser().getId())) 
                 .name(options.getUser().getName())
                 .displayName(options.getUser().getDisplayName())
                 .build();
@@ -769,7 +658,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
         List<PublicKeyCredentialCreationOptionsDto.PubKeyCredParamDto> pubKeyCredParamsDto = options.getPubKeyCredParams().stream()
                 .map(param -> PublicKeyCredentialCreationOptionsDto.PubKeyCredParamDto.builder()
                         .type(param.getType().getValue())
-                        .alg((int) param.getAlg().getValue()) // Cast to int
+                        .alg((int) param.getAlg().getValue()) 
                         .build())
                 .collect(java.util.stream.Collectors.toList());
 
@@ -778,7 +667,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             AuthenticatorSelectionCriteria selection = options.getAuthenticatorSelection();
             authSelectionDto = PublicKeyCredentialCreationOptionsDto.AuthenticatorSelectionCriteriaDto.builder()
                     .authenticatorAttachment(selection.getAuthenticatorAttachment() != null ? selection.getAuthenticatorAttachment().getValue() : null)
-                    .requireResidentKey(selection.isRequireResidentKey()) // Changed to isRequireResidentKey()
+                    .requireResidentKey(selection.isRequireResidentKey()) 
                     .userVerification(selection.getUserVerification() != null ? selection.getUserVerification().getValue() : null)
                     .build();
         }
@@ -804,15 +693,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 .build();
     }
 
-    /**
-     * Finds a UserAuthenticator by its credential ID (external authenticator ID) and validates its status and ownership.
-     * This method is intended for internal use by services like verifyPasskeyAssertion.
-     *
-     * @param mautUser The MautUser who is attempting to use the passkey. Can be null if the user is being identified by the passkey itself.
-     * @param passkeyCredentialId The external credential ID of the passkey (e.g., from a WebAuthn assertion).
-     * @return The validated UserAuthenticator if found and valid.
-     * @throws AuthenticationException if the passkey is not found, not enabled, or (if mautUser is provided) does not belong to the user.
-     */
     private UserAuthenticator findAndValidateUserAuthenticator(MautUser mautUser, String passkeyCredentialId) {
         if (passkeyCredentialId == null || passkeyCredentialId.isBlank()) {
             logger.warn("Attempted to find authenticator with null or blank credential ID.");
@@ -825,7 +705,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                     return new AuthenticationException("Passkey not found.");
                 });
 
-        // If mautUser is provided (e.g., for 2FA or re-auth), validate ownership.
         if (mautUser != null) {
             if (userAuthenticator.getMautUser() == null) {
                  logger.error("Critical: UserAuthenticator ID {} found by credential ID {} has no associated MautUser.", userAuthenticator.getId(), passkeyCredentialId);
@@ -837,8 +716,6 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
                 throw new AuthenticationException("Passkey does not belong to the authenticated user.");
             }
         } else {
-            // If mautUser is null, it means we are identifying the user by the passkey.
-            // We need to ensure the found authenticator actually has an associated user.
             if (userAuthenticator.getMautUser() == null) {
                 logger.error("Critical: UserAuthenticator ID {} found by credential ID {} (for user identification) has no associated MautUser.", userAuthenticator.getId(), passkeyCredentialId);
                 throw new AuthenticationException("Passkey is not associated with any user account, cannot identify user.");
