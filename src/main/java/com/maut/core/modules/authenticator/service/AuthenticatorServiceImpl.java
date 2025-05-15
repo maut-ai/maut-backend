@@ -58,7 +58,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -725,18 +724,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             }
             
             // 8. Set friendly name (use from request if provided, otherwise generate one)
-//            String friendlyName = requestDto.getFriendlyName();
-            String friendlyName = "";
-            if (friendlyName == null || friendlyName.isBlank()) {
-                friendlyName = "Passkey-" + credentialIdBase64.substring(0, Math.min(8, credentialIdBase64.length()));
-                
-                // Append authenticator info if available
-//                final String authenticatorAttachment = requestDto.getAuthenticatorAttachment(); // TODO
-                final String authenticatorAttachment = null;
-                if (authenticatorAttachment != null && !authenticatorAttachment.isBlank()) {
-                    friendlyName += "-" + authenticatorAttachment;
-                }
-            }
+            String friendlyName = "Passkey-" + Instant.now().toString().substring(0, 10); // Example: Passkey-2023-10-27
             newCredential.setFriendlyName(friendlyName);
             
             // 9. Set timestamps

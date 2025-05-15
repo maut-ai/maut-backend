@@ -38,7 +38,7 @@
   "cors": {
   },
   "webauthn": {
-    "relyingPartyId": "app.maut.ai",
+    "relyingPartyId": "localhost",
     "relyingPartyName": "Maut AI",
     "relyingPartyOrigins": [
       "https://app.maut.ai",
