@@ -109,4 +109,6 @@ public interface AuthenticatorService {
             MautUser mautUser,
             CompletePasskeyRegistrationServerRequestDto requestDto
     );
+
+    // Passkey Authentication (Vanilla WebAuthn)
 }

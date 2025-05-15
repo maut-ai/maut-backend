@@ -43,6 +43,7 @@ public class ApplicationConfig {
         private java.util.List<String> relyingPartyOrigins;
         private Long registrationTimeoutMs;
         private Long authenticationTimeoutMs;
+        private Boolean skipAttestationVerification;
 
         // Getters and Setters for all fields
         public String getRelyingPartyId() {
@@ -83,6 +84,14 @@ public class ApplicationConfig {
 
         public void setAuthenticationTimeoutMs(Long authenticationTimeoutMs) {
             this.authenticationTimeoutMs = authenticationTimeoutMs;
+        }
+
+        public Boolean isSkipAttestationVerification() {
+            return skipAttestationVerification;
+        }
+        
+        public void setSkipAttestationVerification(Boolean skipAttestationVerification) {
+            this.skipAttestationVerification = skipAttestationVerification;
         }
     }
 }

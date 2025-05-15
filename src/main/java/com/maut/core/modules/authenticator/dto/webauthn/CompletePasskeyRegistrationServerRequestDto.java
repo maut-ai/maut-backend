@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CompletePasskeyRegistrationServerRequestDto {
 
+    private String challengeId; // The challenge originally sent to the client
     private String id; // Base64URL encoded credential ID
     private String rawId; // Base64URL encoded credential ID (same as id, but some libraries distinguish)
     private AuthenticatorAttestationResponseDto response;
@@ -41,10 +42,12 @@ public class CompletePasskeyRegistrationServerRequestDto {
 
     @JsonCreator
     public CompletePasskeyRegistrationServerRequestDto(
+            @JsonProperty("challengeId") String challengeId,
             @JsonProperty("id") String id,
             @JsonProperty("rawId") String rawId,
             @JsonProperty("response") AuthenticatorAttestationResponseDto response,
             @JsonProperty("type") String type) {
+        this.challengeId = challengeId;
         this.id = id;
         this.rawId = rawId;
         this.response = response;

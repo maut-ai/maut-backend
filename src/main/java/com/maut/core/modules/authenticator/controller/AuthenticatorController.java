@@ -4,13 +4,14 @@ import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationReques
 import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationResponse;
 import com.maut.core.modules.authenticator.dto.ListPasskeysResponse;
 import com.maut.core.modules.authenticator.dto.webauthn.InitiatePasskeyRegistrationServerRequestDto;
+import com.maut.core.modules.authenticator.dto.webauthn.PasskeyRegistrationResultDto;
 import com.maut.core.modules.authenticator.dto.webauthn.PublicKeyCredentialCreationOptionsDto;
+import com.maut.core.modules.authenticator.dto.webauthn.CompletePasskeyRegistrationServerRequestDto;
 import com.maut.core.modules.authenticator.service.AuthenticatorService;
 import com.maut.core.modules.session.service.SessionService;
 import com.maut.core.modules.user.model.MautUser; 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,16 +37,33 @@ public class AuthenticatorController {
     @PostMapping("/initiate-passkey-registration")
     public ResponseEntity<PublicKeyCredentialCreationOptionsDto> initiatePasskeyRegistration(
         @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
-        @RequestBody(required = false) InitiatePasskeyRegistrationServerRequestDto requestDto
+        @RequestBody(required = false) InitiatePasskeyRegistrationServerRequestDto requestDto // Optional client hints
     ) {
         MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
-
-        PublicKeyCredentialCreationOptionsDto response = authenticatorService.initiateVanillaPasskeyRegistration(mautUser, requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        PublicKeyCredentialCreationOptionsDto options = authenticatorService.initiateVanillaPasskeyRegistration(mautUser, requestDto);
+        return ResponseEntity.ok(options);
     }
 
     @PostMapping("/complete-passkey-registration")
-    public ResponseEntity<CompletePasskeyRegistrationResponse> completePasskeyRegistration(
+    public ResponseEntity<PasskeyRegistrationResultDto> completePasskeyRegistration(
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
+        @RequestBody CompletePasskeyRegistrationServerRequestDto requestDto
+    ) {
+        MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
+        PasskeyRegistrationResultDto result = authenticatorService.completeVanillaPasskeyRegistration(mautUser, requestDto);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(result);
+        } else {
+            // Consider appropriate error status codes based on the failure reason in result.getMessage()
+            // For now, a generic 400 Bad Request or 500 Internal Server Error might be used.
+            // For simplicity, returning 400 for client-side errors and 500 if it's a server-side processing issue.
+            // This logic might be refined in the service layer or here based on specific error types.
+            return ResponseEntity.badRequest().body(result); // Or .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    @PostMapping("/complete-passkey-registration-old")
+    public ResponseEntity<CompletePasskeyRegistrationResponse> completePasskeyRegistrationOld(
         @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
         @Valid @RequestBody CompletePasskeyRegistrationRequest request
     ) {
