@@ -58,6 +58,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -608,7 +609,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             }
             
             // Extract challenge as a Base64URL-encoded string (how it's stored in the database)
-            final String challengeBase64 = new String(clientData.getChallenge().getValue(), java.nio.charset.StandardCharsets.UTF_8);
+            final String challengeBase64 = Base64UrlUtil.encodeToString(clientData.getChallenge().getValue());
             
             // 3. Retrieve and validate the stored challenge
             final Optional<WebauthnRegistrationChallenge> challengeOpt = challengeRepository
