@@ -2,8 +2,9 @@ package com.maut.core.modules.authenticator.controller;
 
 import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationRequest;
 import com.maut.core.modules.authenticator.dto.CompletePasskeyRegistrationResponse;
-import com.maut.core.modules.authenticator.dto.InitiatePasskeyRegistrationResponse;
 import com.maut.core.modules.authenticator.dto.ListPasskeysResponse;
+import com.maut.core.modules.authenticator.dto.webauthn.InitiatePasskeyRegistrationServerRequestDto;
+import com.maut.core.modules.authenticator.dto.webauthn.PublicKeyCredentialCreationOptionsDto;
 import com.maut.core.modules.authenticator.service.AuthenticatorService;
 import com.maut.core.modules.session.service.SessionService;
 import com.maut.core.modules.user.model.MautUser; 
@@ -33,12 +34,13 @@ public class AuthenticatorController {
     private final SessionService sessionService;
 
     @PostMapping("/initiate-passkey-registration")
-    public ResponseEntity<InitiatePasskeyRegistrationResponse> initiatePasskeyRegistration(
-        @RequestHeader("X-Maut-Session-Token") String mautSessionToken
+    public ResponseEntity<PublicKeyCredentialCreationOptionsDto> initiatePasskeyRegistration(
+        @RequestHeader("X-Maut-Session-Token") String mautSessionToken,
+        @RequestBody(required = false) InitiatePasskeyRegistrationServerRequestDto requestDto
     ) {
         MautUser mautUser = sessionService.validateMautSessionTokenAndGetMautUser(mautSessionToken);
 
-        InitiatePasskeyRegistrationResponse response = authenticatorService.initiatePasskeyRegistration(mautUser);
+        PublicKeyCredentialCreationOptionsDto response = authenticatorService.initiateVanillaPasskeyRegistration(mautUser, requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
