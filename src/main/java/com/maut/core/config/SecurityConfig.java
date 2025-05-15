@@ -110,6 +110,7 @@ public class SecurityConfig {
                 .mvcMatchers("/v1/status").permitAll()
                 .mvcMatchers("/v1/users/**").authenticated() // Secure MautUser listing endpoint
                 .mvcMatchers("/v1/authenticator/**").permitAll() // Added for MautUser authentication
+                .mvcMatchers("/v1/authenticators/**").permitAll() // Added for MautUser authentication
                 .mvcMatchers("/v1/wallets/**").permitAll()     // Added for MautUser authentication
                 .anyRequest().authenticated()
             )
