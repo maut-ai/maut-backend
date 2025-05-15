@@ -107,7 +107,7 @@ public class SecurityConfig {
                 .mvcMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests for CORS preflight
                 .mvcMatchers("/v1/auth/**").permitAll() // For Maut dashboard user authentication
                 .mvcMatchers("/v1/status").permitAll()
-                .mvcMatchers("/v1/maut-users/**").authenticated() // Secure MautUser listing endpoint
+                .mvcMatchers("/v1/users/**").authenticated() // Secure MautUser listing endpoint
                 .mvcMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .anyRequest().authenticated()
             )

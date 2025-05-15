@@ -443,6 +443,53 @@ Base Path: `/v1/clientapplication`
 
 ---
 
+## Module: User Management (MautUser)
+
+### Controller: `MautUserController`
+Base Path: `/v1/users`
+
+---
+
+#### 1. List MautUsers for Authenticated User's Team
+- **Name:** List MautUsers for Authenticated User's Team
+- **HTTP Method:** `GET`
+- **URL:** `/v1/users`
+- **Description:** Retrieves a paginated list of MautUsers that belong to the team owned by the currently authenticated dashboard user.
+- **Permissions Required:** Authenticated Dashboard User.
+- **Query Parameters:**
+    - `offset` (int, optional, default: 0): How many items are skipped before the first item that is shown.
+    - `limit` (int, optional, default: 25, max: 100): Number of items returned per page.
+- **Example Request:** (No request body, parameters in URL query)
+  `GET /v1/users?offset=0&limit=10`
+- **Example Response (`200 OK`, `application/json`):
+  ```json
+  {
+    "data": [
+      {
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "mautUserId": "maut-user-id-example-123",
+        "clientSystemUserId": "client-system-user-id-abc",
+        "clientId": "MAUT_API_xxxxxxxxxxxxxxxxxxxx",
+        "createdAt": "2023-10-26T10:00:00Z"
+      },
+      {
+        "id": "987e6543-e21b-12d3-a456-426614174001",
+        "mautUserId": "maut-user-id-example-456",
+        "clientSystemUserId": "client-system-user-id-def",
+        "clientId": "MAUT_API_yyyyyyyyyyyyyyyyyyyy",
+        "createdAt": "2023-10-27T11:30:00Z"
+      }
+    ],
+    "recordsTotal": 25,
+    "position": 10
+  }
+  ```
+- **Error Responses:**
+  - `401 UNAUTHORIZED`: If the user is not authenticated.
+  - `404 NOT_FOUND`: (Note: Currently, the service returns a 200 OK with empty data if the user has no team or no MautUsers in the team. This could be enhanced to return 404 from the controller if appropriate for "Not Found if the authenticated user does not own a team" scenario, though the current OpenAPI spec in controller mentions this for 404.)
+
+---
+
 ## Module: Role (Admin)
 
 ### Controller: `AdminRoleController`
