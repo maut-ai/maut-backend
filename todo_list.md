@@ -151,10 +151,14 @@
 - [ ] Investigate and resolve Turnkey authentication and sub-organization creation issues.
 
 ### Fixing Passkey Registration Errors
-- [ ] Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`.
-  - [ ] Address unresolved types: `AuthenticatorData`, `RegistrationEmulationParameters`, `ValidationException`, `PublicKeyCredentialParameters`.
-  - [ ] Address undefined constructor: `CborConverter()`.
-  - [ ] Address undefined methods: `getAuthenticatorData()`, `getCredentialPublicKey()`, `getAttestationType()`.
-  - [ ] **Current Status (User Investigating):** Paused for USER to investigate `pom.xml` for WebAuthn4J dependency issues and ensure IDE classpath is synchronized. These are the likely root cause of the persistent type resolution errors.
-- [ ] Verify `pom.xml` for correct WebAuthn4J dependencies and versions.
-- [ ] Refresh and rebuild the project to ensure the IDE recognizes all dependencies.
+- [X] **Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`**
+  - [X] Address unresolved types: `AuthenticatorData`, `RegistrationEmulationParameters`, `ValidationException`, `PublicKeyCredentialParameters` (Resolved by successful application startup).
+  - [X] Address undefined constructor: `CborConverter()` (Resolved by successful application startup, `ObjectConverter` is now injected).
+  - [X] Address undefined methods: `getAuthenticatorData()`, `getCredentialPublicKey()`, `getAttestationType()` (Resolved by successful application startup).
+  - [X] **Current Status (User Investigating):** Paused for USER to investigate `pom.xml` for WebAuthn4J dependency issues and ensure IDE classpath is synchronized. These are the likely root cause of the persistent type resolution errors.
+  - [X] Verify `pom.xml` for correct WebAuthn4J dependencies and versions.
+  - [X] Refresh and rebuild the project to ensure the IDE recognizes all dependencies.
+- [X] **Run `bin/start_and_healthcheck.sh` and fix any linting or startup errors.**
+  - [X] Create `WebAuthnConfiguration.java` to define `ObjectConverter` and `WebAuthnManager` beans.
+  - [X] Modify `AuthenticatorServiceImpl` to inject and use `ObjectConverter` bean.
+  - [X] Re-run `bin/start_and_healthcheck.sh` to verify fix and check for further errors. (Successfully completed)

@@ -85,6 +85,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
     private final WebauthnRegistrationChallengeRepository challengeRepository;
     private final MautUserWebauthnCredentialRepository credentialRepository;
     private final WebAuthnManager webAuthnManager;
+    private final ObjectConverter objectConverter;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticatorServiceImpl.class);
 
@@ -596,7 +597,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             try {
                 // Convert byte array to string as needed for the JSON parser
                 String clientDataJson = new String(clientDataJSONBytes, java.nio.charset.StandardCharsets.UTF_8);
-                clientData = new ObjectConverter().getJsonConverter().readValue(clientDataJson, CollectedClientData.class);
+                clientData = this.objectConverter.getJsonConverter().readValue(clientDataJson, CollectedClientData.class);
                 if (clientData == null || clientData.getChallenge() == null) {
                     logger.warn("ClientDataJSON parsing failed or challenge is missing for MautUser: {}", mautUser.getId());
                     return PasskeyRegistrationResultDto.builder().success(false).message("Invalid client data.").build();
@@ -686,7 +687,7 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             final byte[] publicKeyCoseBytes;
             try {
                 // Use the object converter directly to encode the public key
-                publicKeyCoseBytes = new ObjectConverter().getCborConverter().writeValueAsBytes(
+                publicKeyCoseBytes = this.objectConverter.getCborConverter().writeValueAsBytes(
                     attestedCredentialData.getCOSEKey().getPublicKey()
                 );
             } catch (Exception e) {
