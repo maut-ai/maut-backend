@@ -105,10 +105,10 @@ public class SecurityConfig {
                 .mvcMatchers(HttpMethod.POST, "/v1/session").permitAll() // For MautUser session creation
                 .mvcMatchers(HttpMethod.GET, "/v1/status").permitAll()
                 .mvcMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests for CORS preflight
-                .mvcMatchers("/v1/auth/**").permitAll()
-                .mvcMatchers(HttpMethod.GET, "/v1/hello").permitAll()
-                .mvcMatchers("/v1/authenticator/**").permitAll() // Added for MautUser authentication
-                .mvcMatchers("/v1/wallets/**").permitAll()     // Added for MautUser authentication
+                .mvcMatchers("/v1/auth/**").permitAll() // For Maut dashboard user authentication
+                .mvcMatchers("/v1/status").permitAll()
+                .mvcMatchers("/v1/maut-users/**").authenticated() // Secure MautUser listing endpoint
+                .mvcMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

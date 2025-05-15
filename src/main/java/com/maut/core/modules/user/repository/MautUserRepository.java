@@ -2,6 +2,8 @@ package com.maut.core.modules.user.repository;
 
 import com.maut.core.modules.clientapplication.model.ClientApplication; // Updated import
 import com.maut.core.modules.user.model.MautUser; // Updated import
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -30,5 +32,14 @@ public interface MautUserRepository extends JpaRepository<MautUser, UUID> {
      * @return An {@link Optional} containing the found MautUser, or empty if not found.
      */
     Optional<MautUser> findByClientApplicationAndClientSystemUserId(ClientApplication clientApplication, String clientSystemUserId);
+
+    /**
+     * Finds MautUsers by their team ID with pagination.
+     *
+     * @param teamId The team ID.
+     * @param pageable The pagination information.
+     * @return A {@link Page} containing the found MautUsers.
+     */
+    Page<MautUser> findByTeamId(UUID teamId, Pageable pageable);
 
 }

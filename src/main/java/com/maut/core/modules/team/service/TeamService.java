@@ -2,9 +2,12 @@ package com.maut.core.modules.team.service;
 
 import com.maut.core.modules.team.model.Team;
 import com.maut.core.modules.team.repository.TeamRepository;
+import com.maut.core.modules.user.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,17 @@ public class TeamService {
         //     throw new DataIntegrityViolationException("Team name already exists: " + team.getName());
         // }
         return teamRepository.save(team);
+    }
+
+    /**
+     * Finds a team by its owner.
+     *
+     * @param owner The user who owns the team.
+     * @return An Optional containing the team if found, or empty otherwise.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Team> getTeamByOwner(User owner) {
+        return teamRepository.findByOwner(owner);
     }
 
     // Other service methods will be added here

@@ -107,6 +107,9 @@
   - Note: This is a temporary implementation due to ongoing Turnkey authentication and sub-organization creation issues. The goal is to allow frontend development to proceed. Will require proper Turnkey integration later.
   - Updated to use DEMO-<uuid_substring> for `turnkeyUserPrivateKeyId` and `turnkeySubOrganizationId` to prevent collisions.
 - [x] USER-MOD-001: Store Team for MautUser upon creation, based on the ClientApplication's owning Team. (Completed: 2025-05-14)
+- [x] AUTH-FIX-001: Fix `ExpiredJwtException` for `/v1/auth/client/login` by adding `permitAll()` in `SecurityConfig`. (Completed: 2025-05-14)  Client-side will no longer send Auth header for login.
+- [x] DEV-GUIDE-001: Add pagination parameter guidelines to `development_guidelines.md`. (Completed: 2025-05-14)
+- [x] USER-API-001: Create paginated API to list MautUsers belonging to the logged-in user's team. (Completed: 2025-05-14)
 
 ### Future / Backlog
 - [ ] Investigate and resolve Turnkey authentication and sub-organization creation issues.

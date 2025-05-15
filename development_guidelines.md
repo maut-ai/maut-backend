@@ -48,7 +48,14 @@ These guidelines are intended to help maintain a simple, understandable, and mai
     * Strictly follow REST principles: standard HTTP methods (GET, POST, PUT, DELETE, etc.), clear resource-based URLs, and stateless communication.
     * **API Versioning:** API versioning **must** be implemented via URI path (e.g., `/api/v1/resource`, `/api/v2/resource`).
     * Document APIs using OpenAPI/Swagger. The specification file should be kept up-to-date.
-    * (Decisions pending on standard API error response structure, endpoint naming conventions, and pagination parameter standards).
+    * **Pagination Parameters:** We split our tabular data into pages of 25 items. You can apply the parameters below to any request for tabular data to adjust the pagination.
+
+        | Parameter | Description                                                             |
+        |-----------|-------------------------------------------------------------------------|
+        | `offset`  | How many items are skipped before the first item that is shown (default: 0). |
+        | `limit`   | Number of items returned per page (default: 25).                          |
+
+    * (Decisions pending on standard API error response structure and endpoint naming conventions).
     * *LLM Interaction:* Provide the OpenAPI specification or detailed descriptions of endpoints when requesting LLM assistance for API-related code.
 
 4.  **Apply Dependency Injection (DI):**

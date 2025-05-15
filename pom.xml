@@ -54,6 +54,13 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
         
+        <!-- OpenAPI / Swagger for API documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+        
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
