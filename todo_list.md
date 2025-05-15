@@ -113,7 +113,7 @@
     - [x] Construct and return `PublicKeyCredentialCreationOptionsDto`.
     - [x] Ensure `MautUser.id` (UUID) is correctly handled and Base64URL encoded for `user.id` in `PublicKeyCredentialCreationOptionsDto`.
     - [x] Refactor AuthenticatorSelectionCriteria logic based on client preferences or sensible defaults.
-    - [x] Ensure ApplicationConfig is correctly loading WebAuthn properties and accessible in AuthenticatorServiceImpl.
+    - [x] **FIXED:** Ensure ApplicationConfig is correctly loading WebAuthn properties and accessible in AuthenticatorServiceImpl.
   - [ ] Implement logic for `completePasskeyRegistration` using WebAuthn4J:
     - [ ] Retrieve and validate challenge.
     - [ ] Verify attestation data and client data using WebAuthn4J.
