@@ -63,8 +63,8 @@ public class SecurityConfig {
                 "http://localhost:3001",
                 "http://localhost:3002",
                 "https://app.maut.ai",
-                "https://maut-demo-app.lovable.app",
-                "https://maut-ai-demo-app.vercel.app"
+                "https://maut-ai-demo-app.vercel.app",
+                "https://maut-ai-demo-app.pages.dev"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
