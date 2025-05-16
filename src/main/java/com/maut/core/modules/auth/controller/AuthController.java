@@ -3,8 +3,11 @@ package com.maut.core.modules.auth.controller;
 import com.maut.core.modules.auth.dto.ClientRegistrationRequest;
 import com.maut.core.modules.auth.dto.LoginRequest;
 import com.maut.core.modules.auth.dto.LoginResponse;
+import com.maut.core.modules.auth.dto.CurrentUserResponseDto;
 import com.maut.core.modules.auth.service.AuthService;
 import com.maut.core.modules.auth.service.JwtService;
+import com.maut.core.modules.role.model.AdminRole;
+import com.maut.core.modules.team.dto.TeamSummaryDto;
 import com.maut.core.modules.user.model.User;
 import com.maut.core.modules.user.enums.UserType;
 import com.maut.core.modules.user.repository.UserRepository;
@@ -26,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/auth")
@@ -44,7 +49,7 @@ public class AuthController {
         log.info("Received client registration request for email: {}", request.getEmail());
         try {
             User registeredUser = authService.registerClient(request);
-            
+
             UserDetails userDetails = userDetailsService.loadUserByUsername(registeredUser.getEmail());
 
             String jwt = jwtService.generateToken(userDetails);
@@ -62,11 +67,11 @@ public class AuthController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
-            
+
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
             User user = userRepository.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication")); 
+                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication"));
 
             if (user.getUserType() != UserType.ADMIN) {
                 log.warn("Admin login attempt by non-ADMIN user: {}", loginRequest.getEmail());
@@ -94,7 +99,7 @@ public class AuthController {
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userRepository.findByEmail(userDetails.getUsername())
-                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication")); 
+                    .orElseThrow(() -> new BadCredentialsException("User not found after authentication"));
 
             if (user.getUserType() != UserType.CLIENT) {
                 log.warn("Client login attempt by non-CLIENT user: {}", loginRequest.getEmail());
@@ -124,8 +129,31 @@ public class AuthController {
         try {
             User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new BadCredentialsException("User not found in repository despite being authenticated."));
+
+            TeamSummaryDto teamSummaryDto = null;
+            if (user.getTeam() != null) {
+                teamSummaryDto = new TeamSummaryDto(user.getTeam().getId(), user.getTeam().getName());
+            }
+
+            Set<String> roleNames = user.getAdminRoles().stream()
+                    .map(AdminRole::getName)
+                    .collect(Collectors.toSet());
+
+            CurrentUserResponseDto responseDto = CurrentUserResponseDto.builder()
+                    .id(user.getId())
+                    .userType(user.getUserType())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .email(user.getEmail())
+                    .isActive(user.isActive())
+                    .createdAt(user.getCreatedAt())
+                    .updatedAt(user.getUpdatedAt())
+                    .team(teamSummaryDto)
+                    .roles(roleNames)
+                    .build();
+
             log.info("Successfully fetched current user details for: {}", userDetails.getUsername());
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(responseDto);
         } catch (BadCredentialsException e) {
             log.warn("Could not find authenticated user {} in repository: {}", userDetails.getUsername(), e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());

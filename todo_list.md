@@ -168,10 +168,17 @@
     - Validate `userId` and fetch `MautUser`.
     - Construct and return `MautUserDetailResponseDto` with user, wallet(s), and authenticator details.
     - Corrected `MautUser.createdAt` usage.
-- [x] Run `bin/start_and_healthcheck.sh` and fix any linting or startup errors.
+- [x] Update /v1/auth/me endpoint
+  - [x] Define relationship between `User` and `Team` entities.
+    - [x] Add `ManyToOne` relationship from `User` to `Team` (`team_id` in `users` table).
+    - [x] Create Flyway migration to add `team_id` to `users` table.
+  - [x] Create `CurrentUserResponseDto.java` (excluding password, including team details).
+    - [x] Create `TeamSummaryDto.java` for nested team info.
+  - [x] Update `AuthController.getCurrentUser()` to use the new DTO and populate team info.
+  - [x] Run `bin/start_and_healthcheck.sh` and fix any errors.
 
 ### Fixing Passkey Registration Errors
-- [X] **Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`**
+ - [X] **Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`**
   - [X] Address unresolved types: `AuthenticatorData`, `RegistrationEmulationParameters`, `ValidationException`, `PublicKeyCredentialParameters` (Resolved by successful application startup).
   - [X] Address undefined constructor: `CborConverter()` (Resolved by successful application startup, `ObjectConverter` is now injected).
   - [X] Address undefined methods: `getAuthenticatorData()`, `getCredentialPublicKey()`, `getAttestationType()` (Resolved by successful application startup).

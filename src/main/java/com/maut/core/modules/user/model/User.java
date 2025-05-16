@@ -2,6 +2,7 @@ package com.maut.core.modules.user.model;
 
 import com.maut.core.modules.user.enums.UserType;
 import com.maut.core.modules.role.model.AdminRole;
+import com.maut.core.modules.team.model.Team;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -83,6 +84,10 @@ public class User implements UserDetails {
     )
     @Builder.Default
     private Set<AdminRole> adminRoles = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id", nullable = true) // Nullable for now
+    private Team team;
 
     @Transient // Mark as transient so JPA ignores it
     private Collection<? extends GrantedAuthority> resolvedAuthorities;
