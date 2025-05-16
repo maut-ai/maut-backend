@@ -69,6 +69,8 @@ import com.maut.core.modules.authenticator.repository.MautUserWebauthnCredential
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.maut.core.modules.user.dto.AuthenticatorDetailResponseDto;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -641,6 +643,27 @@ public class AuthenticatorServiceImpl implements AuthenticatorService {
             logger.error("Unexpected error during passkey registration for MautUser: {}: {}", mautUser.getId(), e.getMessage(), e);
             return PasskeyRegistrationResultDto.builder().success(false).message("An unexpected error occurred: " + e.getMessage()).build();
         }
+    }
+
+    @Override
+    public List<AuthenticatorDetailResponseDto> listWebauthnCredentialsForMautUser(MautUser mautUser) {
+        if (mautUser == null) {
+            log.warn("listWebauthnCredentialsForMautUser called with null MautUser");
+            return List.of(); // Or throw IllegalArgumentException based on desired contract
+        }
+        log.debug("Listing WebAuthn credentials for MautUser ID: {}", mautUser.getId());
+
+        List<MautUserWebauthnCredential> credentials = credentialRepository.findAllByMautUser(mautUser);
+
+        return credentials.stream()
+                .map(cred -> new AuthenticatorDetailResponseDto(
+                        cred.getId(),
+                        cred.getFriendlyName(),
+                        "Passkey", // Hardcoded as per request
+                        cred.getCreatedAt(),
+                        cred.getLastUsedAt() != null ? cred.getLastUsedAt().toInstant() : null
+                ))
+                .collect(Collectors.toList());
     }
 
     private PublicKeyCredentialCreationOptionsDto mapWebAuthn4JOptionsToDto(PublicKeyCredentialCreationOptions options) {

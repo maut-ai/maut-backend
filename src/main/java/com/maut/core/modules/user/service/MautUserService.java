@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +79,44 @@ public class MautUserService {
                 .clientId(mautUser.getClientApplication() != null ? mautUser.getClientApplication().getMautApiClientId() : null)
                 .createdAt(mautUser.getCreatedAt())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MautUser> findMautUserById(UUID userId) {
+        log.debug("Attempting to find MautUser by ID: {}", userId);
+        return mautUserRepository.findById(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isMautUserAccessibleBy(MautUser mautUser, User authenticatedUser) {
+        if (mautUser == null || authenticatedUser == null) {
+            log.warn("isMautUserAccessibleBy called with null mautUser or authenticatedUser");
+            return false;
+        }
+
+        // If the MautUser doesn't have a team, it cannot be validated against the authenticated user's team.
+        if (mautUser.getTeam() == null) {
+            log.warn("MautUser with ID {} does not have an associated team. Access check cannot proceed.", mautUser.getId());
+            return false;
+        }
+
+        User teamOwner = mautUser.getTeam().getOwner();
+        if (teamOwner == null) {
+            log.warn("MautUser with ID {} has a team (ID: {}), but the team does not have an owner. Access check cannot proceed.", mautUser.getId(), mautUser.getTeam().getId());
+            return false;
+        }
+
+        // Check if the authenticated user is the owner of the MautUser's team
+        boolean canAccess = teamOwner.getId().equals(authenticatedUser.getId());
+
+        if (!canAccess) {
+            log.warn("Access denied for authenticated user {} (ID: {}) to MautUser {} (ID: {}). Authenticated user is not the owner of the MautUser's team (Team ID: {}, Owner ID: {}).",
+                    authenticatedUser.getEmail(), authenticatedUser.getId(), mautUser.getMautUserId(), mautUser.getId(), mautUser.getTeam().getId(), teamOwner.getId());
+        } else {
+            log.debug("Access granted for authenticated user {} (ID: {}) to MautUser {} (ID: {}). Authenticated user owns the MautUser's team (Team ID: {}).",
+                    authenticatedUser.getEmail(), authenticatedUser.getId(), mautUser.getMautUserId(), mautUser.getId(), mautUser.getTeam().getId());
+        }
+        return canAccess;
     }
 
 }

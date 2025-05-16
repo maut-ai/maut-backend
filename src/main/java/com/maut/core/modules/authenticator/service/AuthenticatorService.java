@@ -11,6 +11,8 @@ import com.maut.core.modules.authenticator.dto.webauthn.PublicKeyCredentialCreat
 import com.maut.core.modules.authenticator.dto.webauthn.CompletePasskeyRegistrationServerRequestDto;
 import com.maut.core.modules.authenticator.dto.webauthn.PasskeyRegistrationResultDto;
 import com.maut.core.modules.user.model.MautUser;
+import com.maut.core.modules.user.dto.AuthenticatorDetailResponseDto;
+import java.util.List;
 
 public interface AuthenticatorService {
 
@@ -110,5 +112,11 @@ public interface AuthenticatorService {
             CompletePasskeyRegistrationServerRequestDto requestDto
     );
 
-    // Passkey Authentication (Vanilla WebAuthn)
+    /**
+     * Lists WebAuthn credentials (passkeys registered directly, not via Turnkey) for a given MautUser.
+     *
+     * @param mautUser The MautUser for whom to list WebAuthn credentials. Must not be null.
+     * @return A list of AuthenticatorDetailResponseDto representing the WebAuthn credentials.
+     */
+    List<AuthenticatorDetailResponseDto> listWebauthnCredentialsForMautUser(MautUser mautUser);
 }

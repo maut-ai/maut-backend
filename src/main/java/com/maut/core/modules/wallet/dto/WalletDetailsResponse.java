@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -20,5 +21,6 @@ public class WalletDetailsResponse {
     private String turnkeyMautPrivateKeyId;
     private String turnkeyUserPrivateKeyId;
     private Map<String, Object> currentPolicy; // Placeholder for policy details
+    private Instant createdAt;
 
 }

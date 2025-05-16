@@ -81,13 +81,14 @@
 - [ ] Unit tests for `TurnkeyServiceImpl` (mocking `RestTemplate`).
 - [ ] Unit tests for `WalletService` (mocking `TurnkeyService` and repositories).
 - [ ] Integration tests for wallet enrollment flow (if feasible with H2/in-memory setup or testcontainers).
-- [ ] Run `bin/start_and_healthcheck.sh` and ensure application starts and health check passes after Turnkey integration.
+- [x] Run `bin/start_and_healthcheck.sh` and ensure application starts and health check passes after Turnkey integration.
 
 ## Phase 2: Transaction Signing (Placeholder)
 - ... (Details TBD) ...
 
 ## Phase 3: Other Core Features (Placeholder)
 - ... (Details TBD) ...
+- [ ] USER-API-002: Implement GET /v1/users/{userId} endpoint to retrieve MautUser details, wallets, and authenticators.
 
 ## Vanilla WebAuthn Passkey Enrollment (Epic)
 
@@ -148,7 +149,26 @@
 - [x] USER-API-001: Create paginated API to list MautUsers belonging to the logged-in user's team. (Completed: 2025-05-14)
 
 ### Future / Backlog
-- [ ] Investigate and resolve Turnkey authentication and sub-organization creation issues.
+- [x] Investigate and resolve Turnkey authentication and sub-organization creation issues.
+- [x] Create `AuthenticatorDetailResponseDto.java` with fields `id`, `friendlyName`, `type`, `createdAt` (OffsetDateTime), `lastUsedAt` (Instant).
+- [x] Add `listWebauthnCredentialsForMautUser(MautUser mautUser)` to `AuthenticatorService` interface.
+- [x] Implement `listWebauthnCredentialsForMautUser` in `AuthenticatorServiceImpl`:
+    - Use `MautUserWebauthnCredentialRepository` to fetch credentials.
+    - Map to `AuthenticatorDetailResponseDto`.
+    - Hardcode `type` to "Passkey" for now.
+- [x] Correct `AuthenticatorServiceImpl` to use `findAllByMautUser` from `MautUserWebauthnCredentialRepository`.
+- [x] Add `findMautUserById(UUID userId)` to `MautUserService` (already effectively present via JpaRepository's `findById`).
+- [x] Add `isMautUserAccessibleBy(MautUser mautUser, User authenticatedUser)` to `MautUserService` for authorization, checking team ownership.
+- [x] Create `WalletService` to fetch wallet details for a `MautUser` (or locate existing service).
+    - [x] Confirmed `WalletService.getWalletDetails(MautUser)` exists.
+    - [x] Updated `WalletDetailsResponse` DTO to include `createdAt`.
+    - [x] Updated `WalletServiceImpl` to populate `createdAt` in `WalletDetailsResponse`.
+- [x] Create `MautUserController.java` with `GET /v1/users/{userId}` endpoint:
+    - Secure for authenticated dashboard users.
+    - Validate `userId` and fetch `MautUser`.
+    - Construct and return `MautUserDetailResponseDto` with user, wallet(s), and authenticator details.
+    - Corrected `MautUser.createdAt` usage.
+- [x] Run `bin/start_and_healthcheck.sh` and fix any linting or startup errors.
 
 ### Fixing Passkey Registration Errors
 - [X] **Resolve lint errors in `AuthenticatorServiceImpl.java` related to `completeVanillaPasskeyRegistration`**

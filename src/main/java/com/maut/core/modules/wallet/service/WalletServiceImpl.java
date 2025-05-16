@@ -103,6 +103,7 @@ public class WalletServiceImpl implements WalletService {
             .turnkeyMautPrivateKeyId(userWallet.getTurnkeyMautPrivateKeyId())
             .turnkeyUserPrivateKeyId(userWallet.getTurnkeyUserPrivateKeyId())
             .currentPolicy(currentPolicyPlaceholder)
+            .createdAt(userWallet.getCreatedAt())
             .build();
 
         log.debug("Returning wallet details for MautUser ID: {}: {}", mautUser.getId(), response);
