@@ -43,7 +43,7 @@
     "relyingPartyOrigins": [
       "https://app.maut.ai",
       "http://localhost:3001",
-      "https://maut-ai-demo-app.vercel.app/"
+      "https://maut-ai-demo-app.vercel.app"
     ]
   }
 }
