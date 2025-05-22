@@ -7,6 +7,7 @@ public final class WebhookEventTypes {
     }
 
     public static final String USER_ACCOUNT_CREATED = "user.account.created";
+    public static final String MAUT_USER_CREATED = "maut_user.created";
     // Future event types can be added here
 
 }

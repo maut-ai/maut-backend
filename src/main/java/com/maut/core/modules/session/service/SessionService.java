@@ -7,7 +7,11 @@ import com.maut.core.modules.clientapplication.model.ClientApplication;
 import com.maut.core.modules.user.model.MautUser;
 import com.maut.core.modules.clientapplication.repository.ClientApplicationRepository;
 import com.maut.core.modules.user.repository.MautUserRepository;
+import com.maut.core.modules.webhook.service.WebhookDispatcherService;
+import com.maut.core.common.events.WebhookEventTypes;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +23,12 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class SessionService {
 
+    private static final Logger log = LoggerFactory.getLogger(SessionService.class);
+
     private final JwtUtil jwtUtil;
     private final ClientApplicationRepository clientApplicationRepository;
     private final MautUserRepository mautUserRepository;
+    private final WebhookDispatcherService webhookDispatcherService;
 
     @Transactional
     public SessionResponse processClientSession(SessionRequest sessionRequest) {
@@ -61,6 +68,26 @@ public class SessionService {
             }
             mautUser = mautUserRepository.save(newUser);
             isNewMautUser = true;
+
+            // Dispatch webhook event for MautUser creation
+            if (mautUser.getTeam() != null) {
+                try {
+                    log.info("Dispatching '{}' event for MautUser ID: {} and team ID: {}", 
+                             WebhookEventTypes.MAUT_USER_CREATED, mautUser.getMautUserId(), mautUser.getTeam().getId());
+                    webhookDispatcherService.dispatchEvent(
+                        mautUser.getTeam().getId(), 
+                        WebhookEventTypes.MAUT_USER_CREATED, 
+                        mautUser
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to dispatch '{}' event for MautUser ID: {} and team ID: {}. Error: {}", 
+                              WebhookEventTypes.MAUT_USER_CREATED, mautUser.getMautUserId(), mautUser.getTeam().getId(), e.getMessage(), e);
+                    // Not re-throwing, to not let webhook failure break session processing
+                }
+            } else {
+                log.warn("New MautUser ID: {} was created but has no associated team. Webhook event '{}' not dispatched.", 
+                         mautUser.getMautUserId(), WebhookEventTypes.MAUT_USER_CREATED);
+            }
         }
 
         String mautSessionToken = jwtUtil.generateMautSessionToken(mautUser);

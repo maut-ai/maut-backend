@@ -9,11 +9,10 @@ import com.maut.core.modules.role.repository.TeamRoleRepository;
 import com.maut.core.modules.team.model.Team;
 import com.maut.core.modules.team.service.TeamMembershipService;
 import com.maut.core.modules.team.service.TeamService;
+import com.maut.core.modules.team.model.TeamMembership;
 import com.maut.core.modules.user.model.User;
 import com.maut.core.modules.user.enums.UserType;
 import com.maut.core.modules.user.service.UserService;
-import com.maut.core.modules.webhook.service.WebhookDispatcherService;
-import com.maut.core.common.events.WebhookEventTypes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,14 +29,13 @@ public class AuthServiceImpl implements AuthService {
     private final TeamService teamService;
     private final TeamMembershipService teamMembershipService;
     private final TeamRoleRepository teamRoleRepository;
-    private final WebhookDispatcherService webhookDispatcherService;
 
     private static final String OWNER_ROLE_NAME = "ROLE_OWNER";
 
     @Override
     @Transactional // Ensure atomicity
     public User registerClient(ClientRegistrationRequest request) throws PasswordMismatchException, EmailAlreadyExistsException, TeamNameAlreadyExistsException {
-        log.info("Attempting to register client with email: {}", request.getEmail());
+        log.info("Registering new client with email: {}", request.getEmail());
 
         // 1. Validate passwords match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -88,18 +86,8 @@ public class AuthServiceImpl implements AuthService {
                 });
 
         // 8. Add User to Team as Owner
-        teamMembershipService.addTeamMember(savedUser, savedTeam, ownerRole);
-        log.info("User {} added to team {} as {}", savedUser.getId(), savedTeam.getId(), ownerRole.getName());
-
-        // Dispatch webhook event for user account creation
-        try {
-            webhookDispatcherService.dispatchEvent(savedTeam.getId(), WebhookEventTypes.USER_ACCOUNT_CREATED, savedUser);
-            log.info("Dispatched '{}' event for user ID: {} and team ID: {}", WebhookEventTypes.USER_ACCOUNT_CREATED, savedUser.getId(), savedTeam.getId());
-        } catch (Exception e) {
-            // Log the error but don't let it fail the registration process
-            log.error("Failed to dispatch '{}' event for user ID: {} and team ID: {}. Error: {}", 
-                WebhookEventTypes.USER_ACCOUNT_CREATED, savedUser.getId(), savedTeam.getId(), e.getMessage(), e);
-        }
+        TeamMembership ownerMembership = teamMembershipService.addTeamMember(savedUser, savedTeam, ownerRole);
+        log.info("User {} assigned as owner of team {}. Membership ID: {}", savedUser.getEmail(), savedTeam.getName(), ownerMembership.getId());
 
         return savedUser;
     }
