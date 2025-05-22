@@ -16,6 +16,10 @@ public interface WebhookSubscriptionRepository extends JpaRepository<WebhookSubs
     boolean existsByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl);
     WebhookSubscription findByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl); // Added for the update conflict check
 
-    @Query("SELECT ws FROM WebhookSubscription ws WHERE ws.teamId = :teamId AND ws.active = true AND :eventType MEMBER OF ws.eventTypes")
+    @Query("SELECT ws FROM WebhookSubscription ws WHERE ws.teamId = :teamId AND ws.active = true AND " +
+           "(ws.eventTypes = :eventType OR " +
+           "ws.eventTypes LIKE :eventType || ',' || '%' OR " +
+           "ws.eventTypes LIKE '%,' || :eventType || ',' || '%' OR " +
+           "ws.eventTypes LIKE '%,' || :eventType)")
     List<WebhookSubscription> findByTeamIdAndEventTypesContainingAndActiveTrue(@Param("teamId") UUID teamId, @Param("eventType") String eventType);
 }
