@@ -13,4 +13,6 @@ public interface WebhookSubscriptionRepository extends JpaRepository<WebhookSubs
     Optional<WebhookSubscription> findByIdAndTeamId(UUID id, UUID teamId);
     boolean existsByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl);
     WebhookSubscription findByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl); // Added for the update conflict check
+
+    List<WebhookSubscription> findByTeamIdAndEventTypesContainingAndActiveTrue(UUID teamId, String eventType);
 }
