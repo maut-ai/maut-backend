@@ -17,7 +17,7 @@ public interface WebhookSubscriptionRepository extends JpaRepository<WebhookSubs
     WebhookSubscription findByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl); // Added for the update conflict check
 
     @Query(value = "SELECT ws.* FROM webhook_subscriptions ws " +
-                   "WHERE ws.team_id = :teamId AND ws.active = true AND " +
+                   "WHERE ws.team_id = :teamId AND ws.is_active = true AND " +
                    "(ws.event_types = :eventType OR " +
                    "ws.event_types LIKE (:eventType || ',%') OR " +
                    "ws.event_types LIKE ('%,' || :eventType || ',%') OR " +
