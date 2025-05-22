@@ -43,7 +43,7 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     @Override
     public WebhookSubscriptionWithSecretResponse createWebhookSubscription(UUID clientApplicationId, CreateWebhookSubscriptionRequest request, User authenticatedUser) {
         log.info("User {} attempting to create webhook for client application {}", authenticatedUser.getId(), clientApplicationId);
-        clientApplicationService.verifyUserAccessToClientApplication(authenticatedUser, clientApplicationId);
+        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
 
         if (webhookSubscriptionRepository.existsByClientApplicationIdAndTargetUrlAndActiveTrue(clientApplicationId, request.getTargetUrl())) {
             log.warn("Attempt to create webhook with duplicate active target URL {} for client app {}", request.getTargetUrl(), clientApplicationId);
@@ -74,7 +74,7 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     @Override
     @Transactional(readOnly = true)
     public WebhookSubscriptionResponse getWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser) {
-        clientApplicationService.verifyUserAccessToClientApplication(authenticatedUser, clientApplicationId);
+        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
         WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId));
         return mapToResponse(subscription);
@@ -83,7 +83,7 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     @Override
     @Transactional(readOnly = true)
     public List<WebhookSubscriptionResponse> listWebhookSubscriptions(UUID clientApplicationId, User authenticatedUser) {
-        clientApplicationService.verifyUserAccessToClientApplication(authenticatedUser, clientApplicationId);
+        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
         List<WebhookSubscription> subscriptions = webhookSubscriptionRepository.findByClientApplicationId(clientApplicationId);
         return subscriptions.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
@@ -91,7 +91,7 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     @Override
     public WebhookSubscriptionResponse updateWebhookSubscription(UUID clientApplicationId, UUID webhookId, UpdateWebhookSubscriptionRequest request, User authenticatedUser) {
         log.info("User {} attempting to update webhook {} for client application {}", authenticatedUser.getId(), webhookId, clientApplicationId);
-        clientApplicationService.verifyUserAccessToClientApplication(authenticatedUser, clientApplicationId);
+        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
         WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId));
 
@@ -134,7 +134,7 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     @Override
     public void deleteWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser) {
         log.info("User {} attempting to delete webhook {} for client application {}", authenticatedUser.getId(), webhookId, clientApplicationId);
-        clientApplicationService.verifyUserAccessToClientApplication(authenticatedUser, clientApplicationId);
+        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
         WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId + " for this client application."));
         webhookSubscriptionRepository.delete(subscription);
