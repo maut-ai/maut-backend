@@ -1,7 +1,7 @@
 package com.maut.core.modules.webhook.model;
 
 import com.maut.core.modules.webhook.util.StringListConverter;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

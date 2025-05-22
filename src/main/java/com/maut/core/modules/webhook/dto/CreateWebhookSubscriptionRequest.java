@@ -1,8 +1,8 @@
 package com.maut.core.modules.webhook.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;
 import lombok.Getter;
 import lombok.Setter;

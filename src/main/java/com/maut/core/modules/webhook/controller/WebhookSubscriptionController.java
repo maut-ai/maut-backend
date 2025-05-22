@@ -3,7 +3,7 @@ package com.maut.core.modules.webhook.controller;
 import com.maut.core.modules.user.model.User; // Adjust if User location is different
 import com.maut.core.modules.webhook.dto.*;
 import com.maut.core.modules.webhook.service.WebhookSubscriptionService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
