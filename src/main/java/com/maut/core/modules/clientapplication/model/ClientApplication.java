@@ -22,6 +22,7 @@ import java.util.UUID;
 })
 @Data
 @NoArgsConstructor
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, allowSetters = true)
 public class ClientApplication {
 
     @Id

@@ -35,6 +35,7 @@ import java.util.Collections;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, allowSetters = true)
 public class User implements UserDetails {
 
     @Id
