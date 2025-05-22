@@ -37,7 +37,7 @@ public class WebhookDispatcherServiceImpl implements WebhookDispatcherService {
     public void dispatchEvent(UUID teamId, String eventType, Object payload) {
         log.info("Dispatching event type '{}' for team ID '{}'", eventType, teamId);
         List<WebhookSubscription> subscriptions = webhookSubscriptionRepository
-                .findByTeamIdAndEventTypesContainsAndActiveTrue(teamId, eventType);
+                .findActiveByTeamIdAndMatchingEventType(teamId, eventType);
 
         if (subscriptions.isEmpty()) {
             log.info("No active subscriptions found for event type '{}' and team ID '{}'", eventType, teamId);

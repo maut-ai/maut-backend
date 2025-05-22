@@ -2,6 +2,8 @@ package com.maut.core.modules.webhook.repository;
 
 import com.maut.core.modules.webhook.model.WebhookSubscription;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
@@ -14,5 +16,12 @@ public interface WebhookSubscriptionRepository extends JpaRepository<WebhookSubs
     boolean existsByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl);
     WebhookSubscription findByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl); // Added for the update conflict check
 
-    List<WebhookSubscription> findByTeamIdAndEventTypesContainsAndActiveTrue(UUID teamId, String eventType);
+    @Query(value = "SELECT ws.* FROM webhook_subscription ws " +
+                   "WHERE ws.team_id = :teamId AND ws.active = true AND " +
+                   "(ws.event_types = :eventType OR " +
+                   "ws.event_types LIKE (:eventType || ',%') OR " +
+                   "ws.event_types LIKE ('%,' || :eventType || ',%') OR " +
+                   "ws.event_types LIKE ('%,' || :eventType))",
+           nativeQuery = true)
+    List<WebhookSubscription> findActiveByTeamIdAndMatchingEventType(@Param("teamId") UUID teamId, @Param("eventType") String eventType);
 }
