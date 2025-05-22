@@ -1,7 +1,8 @@
 package com.maut.core.modules.webhook.service;
 
-import com.maut.core.modules.clientapplication.service.ClientApplicationService; // Adjust import
-import com.maut.core.modules.user.model.User; // Adjust import
+import com.maut.core.modules.team.model.Team;
+import com.maut.core.modules.team.repository.TeamRepository;
+import com.maut.core.modules.user.model.User;
 import com.maut.core.modules.webhook.dto.*;
 import com.maut.core.modules.webhook.exception.ConflictException;
 import com.maut.core.modules.webhook.exception.PermissionDeniedException;
@@ -10,7 +11,6 @@ import com.maut.core.modules.webhook.model.WebhookSubscription;
 import com.maut.core.modules.webhook.repository.WebhookSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +27,15 @@ import java.util.stream.Collectors;
 public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionService {
 
     private final WebhookSubscriptionRepository webhookSubscriptionRepository;
-    // Using a placeholder/dummy ClientApplicationService for this task.
-    // In a real app, inject the actual ClientApplicationService.
-    @Qualifier("webhookClientApplicationService") // Or your actual qualifier/name
-    private final ClientApplicationService clientApplicationService;
+    private final TeamRepository teamRepository;
 
+    private Team getTeamFromUser(User authenticatedUser) {
+        return teamRepository.findByOwner(authenticatedUser)
+                .orElseThrow(() -> {
+                    log.warn("User {} is not an owner of any team. Webhook operation denied.", authenticatedUser.getId());
+                    return new PermissionDeniedException("User must be an owner of a team to manage webhooks.");
+                });
+    }
 
     private String generateSecureSecret() {
         SecureRandom random = new SecureRandom();
@@ -41,24 +45,24 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
     }
 
     @Override
-    public WebhookSubscriptionWithSecretResponse createWebhookSubscription(UUID clientApplicationId, CreateWebhookSubscriptionRequest request, User authenticatedUser) {
-        log.info("User {} attempting to create webhook for client application {}", authenticatedUser.getId(), clientApplicationId);
-        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
+    public WebhookSubscriptionWithSecretResponse createWebhookSubscription(CreateWebhookSubscriptionRequest request, User authenticatedUser) {
+        Team team = getTeamFromUser(authenticatedUser);
+        log.info("User {} attempting to create webhook for team {}", authenticatedUser.getId(), team.getId());
 
-        if (webhookSubscriptionRepository.existsByClientApplicationIdAndTargetUrlAndActiveTrue(clientApplicationId, request.getTargetUrl())) {
-            log.warn("Attempt to create webhook with duplicate active target URL {} for client app {}", request.getTargetUrl(), clientApplicationId);
-            throw new ConflictException("An active webhook with this target URL already exists for this client application.");
+        if (webhookSubscriptionRepository.existsByTeamIdAndTargetUrlAndActiveTrue(team.getId(), request.getTargetUrl())) {
+            log.warn("Attempt to create webhook with duplicate active target URL {} for team {}", request.getTargetUrl(), team.getId());
+            throw new ConflictException("An active webhook with this target URL already exists for this team.");
         }
 
         WebhookSubscription subscription = new WebhookSubscription();
-        subscription.setClientApplicationId(clientApplicationId);
+        subscription.setTeamId(team.getId());
         subscription.setTargetUrl(request.getTargetUrl());
         subscription.setEventTypes(request.getEventTypes());
         subscription.setSecret(generateSecureSecret());
         subscription.setActive(true); // Default to active
 
         WebhookSubscription savedSubscription = webhookSubscriptionRepository.save(subscription);
-        log.info("Webhook subscription created with ID {} for client application {}", savedSubscription.getId(), clientApplicationId);
+        log.info("Webhook subscription created with ID {} for team {}", savedSubscription.getId(), team.getId());
 
         return WebhookSubscriptionWithSecretResponse.withSecretBuilder()
                 .id(savedSubscription.getId())
@@ -73,40 +77,43 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
 
     @Override
     @Transactional(readOnly = true)
-    public WebhookSubscriptionResponse getWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser) {
-        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
-        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId));
+    public WebhookSubscriptionResponse getWebhookSubscription(UUID webhookId, User authenticatedUser) {
+        Team team = getTeamFromUser(authenticatedUser);
+        log.info("User {} attempting to get webhook {} for team {}", authenticatedUser.getId(), webhookId, team.getId());
+        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndTeamId(webhookId, team.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId + " for this team."));
         return mapToResponse(subscription);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<WebhookSubscriptionResponse> listWebhookSubscriptions(UUID clientApplicationId, User authenticatedUser) {
-        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
-        List<WebhookSubscription> subscriptions = webhookSubscriptionRepository.findByClientApplicationId(clientApplicationId);
+    public List<WebhookSubscriptionResponse> listWebhookSubscriptions(User authenticatedUser) {
+        Team team = getTeamFromUser(authenticatedUser);
+        log.info("User {} listing webhooks for team {}", authenticatedUser.getId(), team.getId());
+        List<WebhookSubscription> subscriptions = webhookSubscriptionRepository.findByTeamId(team.getId());
         return subscriptions.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     @Override
-    public WebhookSubscriptionResponse updateWebhookSubscription(UUID clientApplicationId, UUID webhookId, UpdateWebhookSubscriptionRequest request, User authenticatedUser) {
-        log.info("User {} attempting to update webhook {} for client application {}", authenticatedUser.getId(), webhookId, clientApplicationId);
-        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
-        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId));
+    public WebhookSubscriptionResponse updateWebhookSubscription(UUID webhookId, UpdateWebhookSubscriptionRequest request, User authenticatedUser) {
+        Team team = getTeamFromUser(authenticatedUser);
+        log.info("User {} attempting to update webhook {} for team {}", authenticatedUser.getId(), webhookId, team.getId());
+
+        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndTeamId(webhookId, team.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId + " for this team."));
 
         boolean updated = false;
         if (request.getTargetUrl() != null && !request.getTargetUrl().equals(subscription.getTargetUrl())) {
-            // Check for duplicates if target URL is changing and the subscription is active or being activated
             boolean isActiveOrBeingActivated = (request.getIsActive() != null && request.getIsActive()) || (request.getIsActive() == null && subscription.isActive());
-            if (isActiveOrBeingActivated && webhookSubscriptionRepository.existsByClientApplicationIdAndTargetUrlAndActiveTrue(clientApplicationId, request.getTargetUrl())) {
-                 // Allow update to the same URL if it's the current subscription being modified (e.g. only changing event types)
-                 // This check needs to ensure that we are not conflicting with *another* active subscription.
-                if (!webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
-                        .map(existingSub -> existingSub.getTargetUrl().equals(request.getTargetUrl()) && existingSub.isActive())
-                        .orElse(false)) {
-                    log.warn("Attempt to update webhook {} to a duplicate active target URL {} for client app {}", webhookId, request.getTargetUrl(), clientApplicationId);
-                    throw new ConflictException("An active webhook with the new target URL already exists for this client application.");
+            if (isActiveOrBeingActivated && webhookSubscriptionRepository.existsByTeamIdAndTargetUrlAndActiveTrue(team.getId(), request.getTargetUrl())) {
+                // Check if the conflicting webhook is this same webhook or another one
+                if (!subscription.getTargetUrl().equals(request.getTargetUrl()) || !subscription.isActive()) {
+                     // If it's a different webhook, or this one is being activated with a conflicting URL
+                    WebhookSubscription conflictingSubscription = webhookSubscriptionRepository.findByTeamIdAndTargetUrlAndActiveTrue(team.getId(), request.getTargetUrl());
+                    if (conflictingSubscription != null && !conflictingSubscription.getId().equals(webhookId)) {
+                         log.warn("Attempt to update webhook {} to a duplicate active target URL {} for team {}. Conflicts with webhook {}.", webhookId, request.getTargetUrl(), team.getId(), conflictingSubscription.getId());
+                         throw new ConflictException("An active webhook with the new target URL already exists for this team.");
+                    }
                 }
             }
             subscription.setTargetUrl(request.getTargetUrl());
@@ -123,22 +130,22 @@ public class WebhookSubscriptionServiceImpl implements WebhookSubscriptionServic
 
         if (updated) {
             WebhookSubscription updatedSubscription = webhookSubscriptionRepository.save(subscription);
-            log.info("Webhook subscription {} updated for client application {}", updatedSubscription.getId(), clientApplicationId);
+            log.info("Webhook subscription {} updated for team {}", updatedSubscription.getId(), team.getId());
             return mapToResponse(updatedSubscription);
         } else {
-             log.info("No changes detected for webhook subscription {}", webhookId);
+             log.info("No changes detected for webhook subscription {} for team {}", webhookId, team.getId());
             return mapToResponse(subscription); // No changes, return current state
         }
     }
 
     @Override
-    public void deleteWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser) {
-        log.info("User {} attempting to delete webhook {} for client application {}", authenticatedUser.getId(), webhookId, clientApplicationId);
-        clientApplicationService.getClientApplicationDetails(clientApplicationId, authenticatedUser);
-        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndClientApplicationId(webhookId, clientApplicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId + " for this client application."));
+    public void deleteWebhookSubscription(UUID webhookId, User authenticatedUser) {
+        Team team = getTeamFromUser(authenticatedUser);
+        log.info("User {} attempting to delete webhook {} for team {}", authenticatedUser.getId(), webhookId, team.getId());
+        WebhookSubscription subscription = webhookSubscriptionRepository.findByIdAndTeamId(webhookId, team.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook subscription not found with ID: " + webhookId + " for this team."));
         webhookSubscriptionRepository.delete(subscription);
-        log.info("Webhook subscription {} deleted for client application {}", webhookId, clientApplicationId);
+        log.info("Webhook subscription {} deleted for team {}", webhookId, team.getId());
     }
 
     private WebhookSubscriptionResponse mapToResponse(WebhookSubscription subscription) {

@@ -23,8 +23,8 @@ public class WebhookSubscription {
     @GeneratedValue(strategy = GenerationType.AUTO) // Using AUTO for broader compatibility, can be refined to UUID specific strategy if db supports it well
     private UUID id;
 
-    @Column(name = "client_application_id", nullable = false)
-    private UUID clientApplicationId;
+    @Column(name = "team_id", nullable = false)
+    private UUID teamId;
 
     @Column(name = "target_url", nullable = false, length = 2048)
     private String targetUrl;

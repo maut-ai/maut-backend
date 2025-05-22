@@ -9,7 +9,8 @@ import java.util.UUID;
 
 @Repository
 public interface WebhookSubscriptionRepository extends JpaRepository<WebhookSubscription, UUID> {
-    List<WebhookSubscription> findByClientApplicationId(UUID clientApplicationId);
-    Optional<WebhookSubscription> findByIdAndClientApplicationId(UUID id, UUID clientApplicationId);
-    boolean existsByClientApplicationIdAndTargetUrlAndActiveTrue(UUID clientApplicationId, String targetUrl);
+    List<WebhookSubscription> findByTeamId(UUID teamId);
+    Optional<WebhookSubscription> findByIdAndTeamId(UUID id, UUID teamId);
+    boolean existsByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl);
+    WebhookSubscription findByTeamIdAndTargetUrlAndActiveTrue(UUID teamId, String targetUrl); // Added for the update conflict check
 }

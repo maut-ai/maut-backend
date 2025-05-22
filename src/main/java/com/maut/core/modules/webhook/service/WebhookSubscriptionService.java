@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface WebhookSubscriptionService {
-    WebhookSubscriptionWithSecretResponse createWebhookSubscription(UUID clientApplicationId, CreateWebhookSubscriptionRequest request, User authenticatedUser);
-    WebhookSubscriptionResponse getWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser);
-    List<WebhookSubscriptionResponse> listWebhookSubscriptions(UUID clientApplicationId, User authenticatedUser);
-    WebhookSubscriptionResponse updateWebhookSubscription(UUID clientApplicationId, UUID webhookId, UpdateWebhookSubscriptionRequest request, User authenticatedUser);
-    void deleteWebhookSubscription(UUID clientApplicationId, UUID webhookId, User authenticatedUser);
+    WebhookSubscriptionWithSecretResponse createWebhookSubscription(CreateWebhookSubscriptionRequest request, User authenticatedUser);
+    WebhookSubscriptionResponse getWebhookSubscription(UUID webhookId, User authenticatedUser);
+    List<WebhookSubscriptionResponse> listWebhookSubscriptions(User authenticatedUser);
+    WebhookSubscriptionResponse updateWebhookSubscription(UUID webhookId, UpdateWebhookSubscriptionRequest request, User authenticatedUser);
+    void deleteWebhookSubscription(UUID webhookId, User authenticatedUser);
 }
