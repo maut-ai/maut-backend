@@ -37,6 +37,7 @@ public class Team {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_user_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonManagedReference("team-owner")
     private User owner;
 
     @CreationTimestamp

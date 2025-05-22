@@ -87,6 +87,7 @@ public class User implements UserDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = true) // Nullable for now
+    @com.fasterxml.jackson.annotation.JsonBackReference("team-owner")
     private Team team;
 
     @Transient // Mark as transient so JPA ignores it
